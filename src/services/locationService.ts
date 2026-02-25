@@ -17,7 +17,6 @@ import {
 
 import { httpGetJson } from "./httpClient";
 import { qweatherGetJson } from "./qweatherClient";
-import { requireEnv } from "./serviceEnv";
 
 export type {
   AddressInfo,
@@ -77,18 +76,7 @@ interface AmapReverseResponse {
   };
 }
 
-let cachedAmapKey: string | null = null;
-
-/**
- * 获取高德 Web API Key
- * 从环境变量中获取并校验高德 Web API Key
- * @returns 校验后的高德 Web API Key
- */
-function getAmapKey(): string {
-  if (cachedAmapKey) return cachedAmapKey;
-  cachedAmapKey = requireEnv("VITE_AMAP_API_KEY", import.meta.env.VITE_AMAP_API_KEY);
-  return cachedAmapKey;
-}
+// 已移除对 VITE_AMAP_API_KEY 的依赖与读取逻辑
 
 /**
  * 获取浏览器定位权限状态
@@ -231,31 +219,8 @@ export async function getCoordsViaGeolocation(): Promise<Coords | null> {
  * 失败返回 null
  */
 export async function getCoordsViaAmapIP(): Promise<Coords | null> {
-  const url = `https://restapi.amap.com/v3/ip?key=${encodeURIComponent(getAmapKey())}`;
-  try {
-    const data = (await httpGetJson(url)) as AmapIpResponse;
-    if (String(data?.status) !== "1") {
-      return null;
-    }
-    const rect: string | undefined = data?.rectangle;
-    if (rect && rect.includes(";")) {
-      const [p1, p2] = rect.split(";");
-      const [lon1Str, lat1Str] = p1.split(",");
-      const [lon2Str, lat2Str] = p2.split(",");
-      const lon1 = parseFloat(lon1Str);
-      const lat1 = parseFloat(lat1Str);
-      const lon2 = parseFloat(lon2Str);
-      const lat2 = parseFloat(lat2Str);
-      if ([lon1, lat1, lon2, lat2].every((v) => Number.isFinite(v))) {
-        const lon = (lon1 + lon2) / 2;
-        const lat = (lat1 + lat2) / 2;
-        return { lat, lon };
-      }
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  // 专属版：直接跳过高德网络定位请求
+  return null;
 }
 
 /**
@@ -395,23 +360,8 @@ export async function reverseGeocodeOSM(lat: number, lon: number): Promise<Addre
  * 使用高德反向地理编码
  */
 export async function reverseGeocodeAmap(lat: number, lon: number): Promise<AddressInfo> {
-  const url = `https://restapi.amap.com/v3/geocode/regeo?key=${encodeURIComponent(getAmapKey())}&location=${encodeURIComponent(
-    `${lon},${lat}`
-  )}&radius=100&extensions=base`;
-  try {
-    const data = (await httpGetJson(url)) as AmapReverseResponse;
-    if (String(data?.status) !== "1") {
-      return {
-        error: String(data?.info || "Amap reverse geocode failed"),
-        source: "Amap",
-        raw: data,
-      };
-    }
-    const addr = data?.regeocode?.formatted_address || "";
-    return { address: addr, source: "Amap", raw: data?.regeocode?.addressComponent || {} };
-  } catch (e: unknown) {
-    return { error: String(e), source: "Amap" } as AddressInfo;
-  }
+  // 专属版：固定返回天津市，不发起任何网络请求
+  return { address: "天津市", source: "Amap", raw: { city: "天津市" } };
 }
 
 /**
@@ -475,96 +425,24 @@ async function resolveCoordsAndLocation(options?: LocationFlowOptions): Promise<
   city: string | null;
   addressInfo: AddressInfo | null;
 }> {
-  let coords: Coords | null = null;
-  let coordsSource: string | null = null;
+  // 专属版：强制硬编码位置为天津市
+  const coords = { lat: 39.125, lon: 117.190 };
+  const coordsSource = "hardcoded_tianjin";
+  
+  updateCoordsCache(coords.lat, coords.lon, coordsSource);
 
-  if (options?.preferredLocationMode !== "auto") {
-    const manualResolved = await resolveManualCoordsFromSettings();
-    if (manualResolved.coords) {
-      coords = manualResolved.coords;
-      coordsSource = manualResolved.coordsSource;
-      updateCoordsCache(coords.lat, coords.lon, coordsSource);
-    }
-  }
-
-  if (
-    options?.forceGeolocation === true &&
-    coordsSource !== "manual_city" &&
-    coordsSource !== "manual_coords"
-  ) {
-    const geo = await getGeolocationResult();
-    updateGeolocationDiagnostics(geo.diagnostics);
-    if (geo.coords) {
-      coords = geo.coords;
-      coordsSource = "geolocation";
-      updateCoordsCache(coords.lat, coords.lon, coordsSource);
-    }
-  }
-
-  const cachedCoords = getValidCoords();
-  if (!coords && cachedCoords) {
-    coords = { lat: cachedCoords.lat, lon: cachedCoords.lon };
-    coordsSource = cachedCoords.source;
-  }
-
-  if (
-    options?.forceGeolocation !== true &&
-    (!coords || coordsSource !== "geolocation") &&
-    coordsSource !== "manual_city" &&
-    coordsSource !== "manual_coords"
-  ) {
-    const geo = await getGeolocationResult();
-    updateGeolocationDiagnostics(geo.diagnostics);
-    if (geo.coords) {
-      coords = geo.coords;
-      coordsSource = "geolocation";
-      updateCoordsCache(coords.lat, coords.lon, coordsSource);
-    }
-  }
-
-  if (!coords) {
-    const a = await getCoordsViaAmapIP();
-    if (a) {
-      coords = a;
-      coordsSource = "amap_ip";
-    } else {
-      const i = await getCoordsViaIP();
-      if (i) {
-        coords = i;
-        coordsSource = "ip";
-      }
-    }
-    if (coords && coordsSource) {
-      updateCoordsCache(coords.lat, coords.lon, coordsSource);
-    }
-  }
-
-  if (!coords) {
-    return { coords: null, coordsSource: null, city: null, addressInfo: null };
-  }
-
-  let city: string | null = null;
-  let addressInfo: AddressInfo | null = null;
-
-  const cachedLoc = getValidLocation(coords.lat, coords.lon);
-  if (cachedLoc) {
-    city = cachedLoc.city || null;
-    addressInfo = { address: cachedLoc.address, source: cachedLoc.addressSource };
-  } else {
-    let tmp = await reverseGeocodeAmap(coords.lat, coords.lon);
-    if (!tmp.address) {
-      const fb = await reverseGeocodeOSM(coords.lat, coords.lon);
-      if (fb?.address) tmp = fb;
-    }
-    addressInfo = tmp;
-    city = extractCityFromAddressInfo(addressInfo);
-
-    updateLocationCache(coords.lat, coords.lon, {
-      city: city || undefined,
-      address: addressInfo.address,
-      addressSource: addressInfo.source,
-    });
-  }
+  const city = "天津市";
+  const addressInfo: AddressInfo = {
+    address: "天津市",
+    source: "Hardcoded",
+    raw: { city: "天津市" }
+  };
+  
+  updateLocationCache(coords.lat, coords.lon, {
+    city,
+    address: addressInfo.address,
+    addressSource: addressInfo.source,
+  });
 
   return { coords, coordsSource, city, addressInfo };
 }

@@ -38,7 +38,6 @@ describe("weatherService - flow", () => {
 
     vi.stubEnv("VITE_QWEATHER_API_HOST", "api.example.com");
     vi.stubEnv("VITE_QWEATHER_API_KEY", "test-qweather-key");
-    vi.stubEnv("VITE_AMAP_API_KEY", "test-amap-key");
   });
 
   afterEach(() => {

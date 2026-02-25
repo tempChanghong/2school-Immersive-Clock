@@ -140,7 +140,6 @@ jobs:
           $content = @"
           VITE_QWEATHER_API_HOST=${{ secrets.VITE_QWEATHER_API_HOST }}
           VITE_QWEATHER_API_KEY=${{ secrets.VITE_QWEATHER_API_KEY }}
-          VITE_AMAP_API_KEY=${{ secrets.VITE_AMAP_API_KEY }}
           "@
           
           Set-Content -Path .env -Value $content
@@ -238,7 +237,6 @@ jobs:
           cat > .env << EOF
           VITE_QWEATHER_API_HOST=${{ secrets.VITE_QWEATHER_API_HOST }}
           VITE_QWEATHER_API_KEY=${{ secrets.VITE_QWEATHER_API_KEY }}
-          VITE_AMAP_API_KEY=${{ secrets.VITE_AMAP_API_KEY }}
           EOF
 
       - name: Build Electron app

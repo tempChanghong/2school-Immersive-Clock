@@ -19,7 +19,6 @@ describe("weatherService", () => {
   it("fetchWeatherNow 正常返回天气数据", async () => {
     vi.stubEnv("VITE_QWEATHER_API_HOST", "api.example.com");
     vi.stubEnv("VITE_QWEATHER_API_KEY", "test-qweather-key");
-    vi.stubEnv("VITE_AMAP_API_KEY", "test-amap-key");
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -40,7 +39,6 @@ describe("weatherService", () => {
   it("fetchWeatherHourly72h 正常返回小时预报数据", async () => {
     vi.stubEnv("VITE_QWEATHER_API_HOST", "api.example.com");
     vi.stubEnv("VITE_QWEATHER_API_KEY", "test-qweather-key");
-    vi.stubEnv("VITE_AMAP_API_KEY", "test-amap-key");
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -66,7 +64,6 @@ describe("weatherService", () => {
   it("fetchWeatherNow 捕获 HTTP 错误并返回 error 字段", async () => {
     vi.stubEnv("VITE_QWEATHER_API_HOST", "api.example.com");
     vi.stubEnv("VITE_QWEATHER_API_KEY", "test-qweather-key");
-    vi.stubEnv("VITE_AMAP_API_KEY", "test-amap-key");
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
@@ -86,7 +83,6 @@ describe("weatherService", () => {
   it("getCoordsViaIP 能从不同数据源解析坐标", async () => {
     vi.stubEnv("VITE_QWEATHER_API_HOST", "api.example.com");
     vi.stubEnv("VITE_QWEATHER_API_KEY", "test-qweather-key");
-    vi.stubEnv("VITE_AMAP_API_KEY", "test-amap-key");
 
     const responses: Record<string, unknown> = {
       "https://ipapi.co/json/": { latitude: 31.2, longitude: 121.5 },
@@ -118,7 +114,6 @@ describe("weatherService", () => {
   it("buildWeatherFlow 不再请求 GeoAPI，并可从反编码提取城市名", async () => {
     vi.stubEnv("VITE_QWEATHER_API_HOST", "api.example.com");
     vi.stubEnv("VITE_QWEATHER_API_KEY", "test-qweather-key");
-    vi.stubEnv("VITE_AMAP_API_KEY", "test-amap-key");
 
     if (!globalThis.localStorage) {
       const store = new Map<string, string>();

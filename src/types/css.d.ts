@@ -9,8 +9,6 @@ declare const __ENABLE_PWA__: boolean;
 
 /** Vite 环境变量类型定义 */
 interface ImportMetaEnv {
-  /** 高德地图 API Key */
-  readonly VITE_AMAP_API_KEY: string;
   /** 应用版本号 */
   readonly VITE_APP_VERSION: string;
   /** 私有域主机（推荐） */
