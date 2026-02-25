@@ -73,3 +73,6 @@ desktop.ini
 playwright-report/
 test-results/
 blob-report/
+
+# 参考其他代码仓的文件
+cankao/

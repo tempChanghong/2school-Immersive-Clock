@@ -31,7 +31,7 @@
 /* 进度条下方左侧 - 天气和噪音监测 */
 .topLeft {
   position: absolute;
-  top: 80px;
+  top: 104px; /* 从原先的 80px 往下调整以避让放大后的校徽 */
   left: 24px;
   margin: 0;
   z-index: 10;

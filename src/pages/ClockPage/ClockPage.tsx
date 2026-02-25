@@ -311,6 +311,7 @@ export function ClockPage() {
     >
       <div className={styles.schoolLogoContainer}>
         <img src={schoolLogo} alt="School Logo" className={styles.schoolLogo} />
+        <span className={styles.schoolName}>天津市第二中学</span>
       </div>
 
       <div

@@ -173,15 +173,40 @@
   z-index: 50;
   pointer-events: none;
   display: flex;
-  align-items: center;
+  align-items: center; /* 完美垂直居中对齐 */
 }
 
 .schoolLogo {
-  height: 36px;
+  height: 64px; /* 从原先的 36px 放大到 64px */
   width: auto;
-  opacity: 0.85;
-  transition: opacity var(--transition-normal);
+  opacity: 0.9;
+  transition: all var(--transition-normal);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  margin-right: 16px; /* 增加呼吸感间距 */
+}
+
+.schoolName {
+  font-family: var(--font-ui);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  letter-spacing: 2px;
+  opacity: 0.85;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 1024px) {
+  .schoolLogoContainer {
+    top: 1.25rem;
+    left: 1.25rem;
+  }
+  .schoolLogo {
+    height: 52px;
+    margin-right: 14px;
+  }
+  .schoolName {
+    font-size: 1.25rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -190,7 +215,11 @@
     left: 1.25rem;
   }
   .schoolLogo {
-    height: 32px;
+    height: 48px;
+    margin-right: 12px;
+  }
+  .schoolName {
+    font-size: 1.15rem;
   }
 }
 
@@ -200,7 +229,11 @@
     left: 1rem;
   }
   .schoolLogo {
-    height: 28px;
+    height: 40px;
+    margin-right: 10px;
+  }
+  .schoolName {
+    font-size: 1rem;
   }
 }
 
@@ -210,6 +243,10 @@
     left: 1rem;
   }
   .schoolLogo {
-    height: 28px;
+    height: 40px;
+    margin-right: 10px;
+  }
+  .schoolName {
+    font-size: 1rem;
   }
 }
