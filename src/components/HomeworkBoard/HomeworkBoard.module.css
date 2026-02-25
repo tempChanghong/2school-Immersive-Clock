@@ -34,7 +34,7 @@
 
 .title {
   margin: 0;
-  font-family: var(--font-main);
+  font-family: var(--font-ui);
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-color);
@@ -142,7 +142,7 @@
 
 .cardTitle {
   margin: 0;
-  font-family: var(--font-main);
+  font-family: var(--font-ui);
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--primary-color);
@@ -200,7 +200,7 @@
 }
 
 .emptyState p {
-  font-family: var(--font-main);
+  font-family: var(--font-ui);
   font-size: 1.2rem;
   color: var(--text-color);
   margin-bottom: 8px;
@@ -213,7 +213,7 @@
 }
 
 .errorState p {
-  font-family: var(--font-main);
+  font-family: var(--font-ui);
   font-size: 1.2rem;
   color: #ff6b6b;
   margin-bottom: 8px;

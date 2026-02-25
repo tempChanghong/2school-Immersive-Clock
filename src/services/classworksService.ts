@@ -43,7 +43,7 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
   const dataKey = `classworks-data-${dateStr}`;
 
   try {
-    const url = `${serverUrl.replace(/\/$/, '')}/kv/${namespace}/${dataKey}`;
+    const url = `${serverUrl.replace(/\/$/, '')}/kv/${dataKey}`;
     const headers = buildHeaders(siteKey);
 
     const response = await fetch(url, { headers });
@@ -59,20 +59,25 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
     const data = await response.json();
     const itemsArray: HomeworkItem[] = [];
 
-    // The legacy response format is likely: { "uuid": { name: "Subject", content: "...", order: 1 } }
-    if (data && typeof data === "object") {
-      for (const key in data) {
-        const itemObj = data[key];
-        if (typeof itemObj === "object" && itemObj !== null && itemObj.name && typeof itemObj.content === "string") {
+    // Fetch the data. It contains "homework" and "attendance" properties
+    if (data && data.homework && typeof data.homework === "object") {
+      let defaultOrder = 100;
+      for (const subject in data.homework) {
+        const itemObj = data.homework[subject];
+        if (itemObj && typeof itemObj.content === "string") {
           itemsArray.push({
-            key: key,
-            ...itemObj
+            key: subject,
+            name: itemObj.name || subject,
+            content: itemObj.content,
+            order: typeof itemObj.order === "number" ? itemObj.order : defaultOrder++,
+            type: itemObj.type || "normal",
+            ...itemObj // Collect any other properties safely
           });
         }
       }
     }
 
-    return itemsArray.sort((a, b) => (a.order || 0) - (b.order || 0));
+    return itemsArray;
   } catch (error) {
     console.error("Error fetching homework data:", error);
     return [];
@@ -88,17 +93,12 @@ export async function testHomeworkConnection(
   siteKey?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const dateStr = getTodayDateString();
-    const dataKey = `classworks-data-${dateStr}`;
-    const url = `${serverUrl.replace(/\/$/, '')}/kv/${namespace}/${dataKey}`;
+    const url = `${serverUrl.replace(/\/$/, '')}/kv/_info`;
     const headers = buildHeaders(siteKey);
 
     const response = await fetch(url, { headers });
 
     if (!response.ok) {
-      if (response.status === 404) {
-        return { success: false, error: "能连接上服务器，但当前命名空间下没有今天的作业数据 (404 Not Found)" };
-      }
       if (response.status === 401 || response.status === 403) {
         return { success: false, error: "认证失败，请检查密码/Token是否正确" };
       }
@@ -107,11 +107,11 @@ export async function testHomeworkConnection(
 
     const data = await response.json();
     
-    // As long as it returns a JSON object, we consider it connected successfully
-    if (data && typeof data === "object") {
+    // ClassworksKV returns { device: {...} } for /_info
+    if (data && data.device) {
       return { success: true };
     } else {
-      return { success: false, error: "连接成功，但返回的数据不符合预期的对象格式" };
+      return { success: false, error: "连接成功，但返回数据格式不符合预期的 ClassworksKV 规范" };
     }
   } catch (error: any) {
     return { success: false, error: error.message || "网络请求失败，请检查服务端地址" };
