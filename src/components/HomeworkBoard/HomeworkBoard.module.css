@@ -258,12 +258,6 @@
 /* 响应式 */
 @media (max-width: 768px) {
   .boardContainer {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: calc(100% - 32px);
-    margin: 16px;
-    z-index: 9999; /* Ensure it floats above the clock on compact mobile views */
+    display: none;
   }
 }
