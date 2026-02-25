@@ -109,11 +109,11 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
               placeholder="这里输入你的 UUID 或命名空间"
             />
             <FormInput
-              label="密码 / Token (可选)"
+              label="Token (可选)"
               type="password"
               value={cwPassword}
               onChange={(e) => setCwPassword(e.target.value)}
-              placeholder="如果面板设置了密码请输入"
+              placeholder="请输入应用 Token"
             />
           </FormRow>
 

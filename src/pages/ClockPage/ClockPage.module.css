@@ -168,16 +168,17 @@
 /* 学校 Logo 样式 */
 .schoolLogoContainer {
   position: absolute;
-  top: 1.5rem;
-  left: 1.5rem;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 50;
   pointer-events: none;
   display: flex;
-  align-items: center; /* 完美垂直居中对齐 */
+  align-items: center;
 }
 
 .schoolLogo {
-  height: 64px; /* 从原先的 36px 放大到 64px */
+  height: 44px;
   width: auto;
   opacity: 0.9;
   transition: all var(--transition-normal);
@@ -187,7 +188,7 @@
 
 .schoolName {
   font-family: var(--font-ui);
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-color);
   letter-spacing: 2px;

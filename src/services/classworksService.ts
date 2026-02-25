@@ -64,7 +64,7 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
       let defaultOrder = 100;
       for (const subject in data.homework) {
         const itemObj = data.homework[subject];
-        if (itemObj && typeof itemObj.content === "string") {
+        if (itemObj && typeof itemObj.content === "string" && itemObj.content.trim() !== "") {
           itemsArray.push({
             key: subject,
             name: itemObj.name || subject,
