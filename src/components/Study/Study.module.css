@@ -32,15 +32,14 @@
 .topLeft {
   position: absolute;
   top: 104px; /* 从原先的 80px 往下调整以避让放大后的校徽 */
-  left: 50%;
-  transform: translateX(-50%);
+  left: 24px;
   margin: 0;
   z-index: 10;
-  text-align: center;
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  align-items: center;
+  align-items: flex-start;
 }
 
 /* 进度条下方右侧 - 高考倒计时和励志语录 */

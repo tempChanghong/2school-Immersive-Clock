@@ -512,16 +512,16 @@ export function Study() {
 
   return (
     <div className={styles.container} style={containerStyle}>
-      {/* 左上角：状态栏与噪音监测（分别可隐藏） */}
-      {(display.showStatusBar || display.showNoiseMonitor) && (
+      {/* 状态栏直接在容器中绝对定位（以便完全居中于左半区可用空间） */}
+      {display.showStatusBar && <StudyStatus />}
+
+      {/* 左上角：噪音监测（独立占用 topLeft 容器） */}
+      {display.showNoiseMonitor && (
         <div className={styles.topLeft}>
-          {display.showStatusBar && <StudyStatus />}
-          {display.showNoiseMonitor && (
-            <NoiseMonitor
-              onBreathingLightClick={handleOpenHistory}
-              onStatusClick={handleOpenHistory}
-            />
-          )}
+          <NoiseMonitor
+            onBreathingLightClick={handleOpenHistory}
+            onStatusClick={handleOpenHistory}
+          />
         </div>
       )}
 
