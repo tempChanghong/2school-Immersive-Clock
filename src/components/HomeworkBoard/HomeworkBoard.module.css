@@ -1,15 +1,19 @@
-/* 作业板容器：固定在右侧的面板 */
+/* 作业板容器：右侧悬浮毛玻璃面板 */
 .boardContainer {
-  width: 320px; /* 合适的侧边栏宽度 */
-  height: 100%;
+  width: 340px; /* 合适的侧边栏宽度 */
+  margin: 24px 24px 24px 0; /* 上、右、下 24px，左 0（通过左边元素的 gap 控制） */
+  border-radius: 24px;      /* 圆角边框 */
   background: rgba(30, 30, 35, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px); /* 更强的毛玻璃模糊 */
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.15); /* 更清晰的边框以便凸显卡片 */
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.05); /* 浮层的高级阴影 */
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   z-index: 10;
+  overflow: hidden; /* 防止子元素溢出圆角 */
+  animation: fadeInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* 头部 Header */
@@ -225,6 +229,17 @@
 }
 
 /* 动画效果 */
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -244,6 +259,6 @@
 @media (max-width: 480px) {
   .boardContainer {
     width: 100%;
-    max-width: 100vw;
+    margin: 16px;
   }
 }

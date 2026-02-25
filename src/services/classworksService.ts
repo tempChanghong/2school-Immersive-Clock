@@ -59,24 +59,20 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
     const data = await response.json();
     const itemsArray: HomeworkItem[] = [];
 
-    // The new response format is: { homework: { "Subject": { content: "..." }, ... } }
-    if (data && data.homework && typeof data.homework === "object") {
-      let orderIndex = 0;
-      for (const subject in data.homework) {
-        const itemObj = data.homework[subject];
-        if (itemObj && typeof itemObj.content === "string") {
+    // The legacy response format is likely: { "uuid": { name: "Subject", content: "...", order: 1 } }
+    if (data && typeof data === "object") {
+      for (const key in data) {
+        const itemObj = data[key];
+        if (typeof itemObj === "object" && itemObj !== null && itemObj.name && typeof itemObj.content === "string") {
           itemsArray.push({
-            key: subject, // subject as unique key
-            name: subject,
-            content: itemObj.content,
-            order: orderIndex++,
-            type: "normal"
+            key: key,
+            ...itemObj
           });
         }
       }
     }
 
-    return itemsArray;
+    return itemsArray.sort((a, b) => (a.order || 0) - (b.order || 0));
   } catch (error) {
     console.error("Error fetching homework data:", error);
     return [];
@@ -111,10 +107,11 @@ export async function testHomeworkConnection(
 
     const data = await response.json();
     
-    if (data && data.homework) {
+    // As long as it returns a JSON object, we consider it connected successfully
+    if (data && typeof data === "object") {
       return { success: true };
     } else {
-      return { success: false, error: "连接成功，但数据格式不匹配，未找到 homework 字段" };
+      return { success: false, error: "连接成功，但返回的数据不符合预期的对象格式" };
     }
   } catch (error: any) {
     return { success: false, error: error.message || "网络请求失败，请检查服务端地址" };
