@@ -11,6 +11,7 @@ import { Tabs } from "../Tabs/Tabs";
 import AboutSettingsPanel from "./sections/AboutSettingsPanel";
 import BasicSettingsPanel from "./sections/BasicSettingsPanel";
 import ContentSettingsPanel from "./sections/ContentSettingsPanel";
+import HomeworkSettingsPanel from "./sections/HomeworkSettingsPanel";
 import StudySettingsPanel from "./sections/StudySettingsPanel";
 import WeatherSettingsPanel from "./sections/WeatherSettingsPanel";
 import styles from "./SettingsPanel.module.css";
@@ -34,11 +35,11 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const dispatch = useAppDispatch();
 
   const [activeCategory, setActiveCategory] = useState<
-    "basic" | "weather" | "monitor" | "quotes" | "about"
+    "basic" | "homework" | "weather" | "monitor" | "quotes" | "about"
   >("basic");
   const [targetYear, setTargetYear] = useState(study.targetYear);
-  // 分区保存注册
   const basicSaveRef = useRef<() => void>(() => {});
+  const homeworkSaveRef = useRef<() => void>(() => {});
   const weatherSaveRef = useRef<() => void>(() => {});
   const monitorSaveRef = useRef<() => void>(() => {});
   const quotesSaveRef = useRef<() => void>(() => {});
@@ -62,6 +63,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
     dispatch({ type: "SET_TARGET_YEAR", payload: targetYear });
     try {
       basicSaveRef.current?.();
+      homeworkSaveRef.current?.();
       weatherSaveRef.current?.();
       monitorSaveRef.current?.();
       quotesSaveRef.current?.();
@@ -118,6 +120,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           <Tabs
             items={[
               { key: "basic", label: "基础设置" },
+              { key: "homework", label: "作业板" },
               { key: "weather", label: "天气设置" },
               { key: "monitor", label: "监测设置" },
               { key: "quotes", label: "语录设置" },
@@ -125,7 +128,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             ]}
             activeKey={activeCategory}
             onChange={(key) =>
-              setActiveCategory(key as "basic" | "weather" | "monitor" | "quotes" | "about")
+              setActiveCategory(key as "basic" | "homework" | "weather" | "monitor" | "quotes" | "about")
             }
             variant="announcement"
             size="md"
@@ -140,6 +143,15 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
               onTargetYearChange={setTargetYear}
               onRegisterSave={(fn) => {
                 basicSaveRef.current = fn;
+              }}
+            />
+          )}
+
+          {/* 作业板设置 */}
+          {activeCategory === "homework" && (
+            <HomeworkSettingsPanel 
+              onRegisterSave={(fn: () => void) => {
+                homeworkSaveRef.current = fn;
               }}
             />
           )}

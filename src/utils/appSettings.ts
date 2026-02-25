@@ -57,6 +57,7 @@ export interface AppSettings {
       lastError?: string;
     };
     classworks: {
+      enabled: boolean;
       serverUrl: string;
       namespace: string;
       password?: string;
@@ -160,6 +161,7 @@ const DEFAULT_SETTINGS: AppSettings = {
       lastError: undefined,
     },
     classworks: {
+      enabled: true,
       serverUrl: "https://kv-service.wuyuan.dev",
       namespace: "",
       password: "",

@@ -84,7 +84,7 @@ const initialState: AppState = {
     lastShownTime: 0,
   },
   isModalOpen: false,
-  isHomeworkOpen: false,
+  isHomeworkEnabled: getAppSettings().general.classworks.enabled,
 };
 
 /**
@@ -244,10 +244,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
         isModalOpen: false,
       };
 
-    case "TOGGLE_HOMEWORK":
+    case "SET_HOMEWORK_ENABLED":
       return {
         ...state,
-        isHomeworkOpen: !state.isHomeworkOpen,
+        isHomeworkEnabled: action.payload,
       };
 
     case "SET_TARGET_YEAR":

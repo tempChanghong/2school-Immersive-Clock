@@ -9,10 +9,9 @@ import styles from "./HomeworkBoard.module.css";
 
 interface HomeworkBoardProps {
   isOpen: boolean;
-  onClose: () => void;
 }
 
-export function HomeworkBoard({ isOpen, onClose }: HomeworkBoardProps) {
+export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
   const { study } = useAppState(); // We can add mapping of refresh intervals here if needed later.
   const [data, setData] = useState<HomeworkItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -39,24 +38,6 @@ export function HomeworkBoard({ isOpen, onClose }: HomeworkBoardProps) {
     }
   }, [isOpen, loadData]);
 
-  // Handle Escape key to close
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Prevent click from propagating to ClockPage
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   const splitContent = (content: string) => {
     if (!content) return [];
     return content.split("\n").filter((line) => line.trim().length > 0);
@@ -67,14 +48,12 @@ export function HomeworkBoard({ isOpen, onClose }: HomeworkBoardProps) {
   }
 
   return (
-    <div className={styles.overlay} onClick={handleOverlayClick} aria-label="作业板遮罩">
-      <div
-        className={styles.boardContainer}
-        role="dialog"
-        aria-label="作业板"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={styles.header}>
+    <div
+      className={styles.boardContainer}
+      role="region"
+      aria-label="作业板"
+    >
+      <div className={styles.header}>
           <div className={styles.titleArea}>
             <h2 className={styles.title}>作业板 (Homework)</h2>
             <div className={styles.statusInfo}>
@@ -92,13 +71,10 @@ export function HomeworkBoard({ isOpen, onClose }: HomeworkBoardProps) {
               type="button"
               className={styles.iconBtn}
               onClick={loadData}
-              title="刷新作业台"
+              title="刷新作业"
               disabled={loading}
             >
               <RefreshCw size={20} className={loading ? styles.spinning : ""} />
-            </button>
-            <button type="button" className={styles.iconBtn} onClick={onClose} title="关闭">
-              <X size={24} />
             </button>
           </div>
         </div>
@@ -138,7 +114,6 @@ export function HomeworkBoard({ isOpen, onClose }: HomeworkBoardProps) {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
-}
+};

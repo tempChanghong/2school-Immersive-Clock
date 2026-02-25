@@ -1,31 +1,15 @@
-/* 悬浮遮罩：阻止事件穿透并提供模糊背景 */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2000;
-  display: flex;
-  justify-content: flex-end; /* 右侧抽屉式弹出 */
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
-  animation: fadeIn 0.3s ease;
-}
-
-/* 作业板容器：右侧抽屉式，磨砂玻璃特效 */
+/* 作业板容器：固定在右侧的面板 */
 .boardContainer {
-  width: 480px;
-  max-width: 90vw;
-  height: 100vh;
-  background: rgba(30, 30, 35, 0.85); /* 沉浸式深色模式底色 */
+  width: 320px; /* 合适的侧边栏宽度 */
+  height: 100%;
+  background: rgba(30, 30, 35, 0.4);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 /* 头部 Header */
@@ -167,6 +151,7 @@
   background: rgba(255, 255, 255, 0.1);
   color: var(--secondary-color);
   text-transform: capitalize;
+  margin-left: 8px; /* 给 badge 加点间距 */
 }
 
 .cardBody {
@@ -240,15 +225,6 @@
 }
 
 /* 动画效果 */
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;

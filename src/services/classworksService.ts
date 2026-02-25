@@ -2,62 +2,122 @@ import type { HomeworkItem } from "../types/classworks";
 import { getAppSettings } from "../utils/appSettings";
 
 /**
- * 获取作业列表，直接按照原来对象的 key (例如 `["uid-2u3j-fs23", { name: "语文", content: "...", order: 1 }]`)
- * 转换为数组，并按 order 排序。由于项目现在移除了复杂的类型，所以只做通用的处理。
+ * 格式化今天的日期为 YYYYMMDD
+ */
+function getTodayDateString() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}${mm}${dd}`;
+}
+
+/**
+ * 构造请求头
+ */
+function buildHeaders(siteKey?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Accept": "application/json"
+  };
+  if (siteKey) {
+    headers["x-site-key"] = siteKey;
+    headers["x-app-token"] = siteKey;
+  }
+  return headers;
+}
+
+/**
+ * 获取作业列表，按照给定格式解析
  */
 export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
   const cwConfig = getAppSettings().general.classworks;
   const serverUrl = cwConfig.serverUrl || "https://kv-service.wuyuan.dev";
   const namespace = cwConfig.namespace;
   const siteKey = cwConfig.password;
-  const dataKey = "classworks-config-homework-today"; // 根据原版代码分析的默认存储今日作业的key，或者可以叫 'homework'
 
-  if (!serverUrl || !namespace) {
-    console.warn("Classworks KV variables are not set. Homework fetching is disabled.");
+  if (!cwConfig.enabled || !serverUrl || !namespace) {
     return [];
   }
 
+  const dateStr = getTodayDateString();
+  const dataKey = `classworks-data-${dateStr}`;
+
   try {
     const url = `${serverUrl.replace(/\/$/, '')}/kv/${namespace}/${dataKey}`;
-    const headers: Record<string, string> = {
-      "Accept": "application/json"
-    };
-
-    if (siteKey) {
-      headers["x-site-key"] = siteKey;
-      headers["x-app-token"] = siteKey; // 同时提供两种，以防不同的版本
-    }
+    const headers = buildHeaders(siteKey);
 
     const response = await fetch(url, { headers });
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.info("No homework data found on server (404).");
+        console.info(`No homework data found for today (${dataKey}).`);
         return [];
       }
       throw new Error(`Failed to fetch homework: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    
-    // 返回的数据格式原本是一个对象: { "UUID1": { name: "Subject", content: "...", order: 1, type: "normal" }, "UUID2": ... }
     const itemsArray: HomeworkItem[] = [];
-    
-    for (const key in data) {
-      // 忽略可能存在的 success 标记等
-      if (typeof data[key] === "object" && data[key] !== null && data[key].name) {
-         itemsArray.push({
-           key: key,
-           ...data[key]
-         });
+
+    // The new response format is: { homework: { "Subject": { content: "..." }, ... } }
+    if (data && data.homework && typeof data.homework === "object") {
+      let orderIndex = 0;
+      for (const subject in data.homework) {
+        const itemObj = data.homework[subject];
+        if (itemObj && typeof itemObj.content === "string") {
+          itemsArray.push({
+            key: subject, // subject as unique key
+            name: subject,
+            content: itemObj.content,
+            order: orderIndex++,
+            type: "normal"
+          });
+        }
       }
     }
 
-    // 按照 order 排序
-    return itemsArray.sort((a, b) => (a.order || 0) - (b.order || 0));
-
+    return itemsArray;
   } catch (error) {
     console.error("Error fetching homework data:", error);
     return [];
   }
 }
+
+/**
+ * 测试作业板连通性
+ */
+export async function testHomeworkConnection(
+  serverUrl: string,
+  namespace: string,
+  siteKey?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const dateStr = getTodayDateString();
+    const dataKey = `classworks-data-${dateStr}`;
+    const url = `${serverUrl.replace(/\/$/, '')}/kv/${namespace}/${dataKey}`;
+    const headers = buildHeaders(siteKey);
+
+    const response = await fetch(url, { headers });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { success: false, error: "能连接上服务器，但当前命名空间下没有今天的作业数据 (404 Not Found)" };
+      }
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, error: "认证失败，请检查密码/Token是否正确" };
+      }
+      return { success: false, error: `服务器返回错误: ${response.status} ${response.statusText}` };
+    }
+
+    const data = await response.json();
+    
+    if (data && data.homework) {
+      return { success: true };
+    } else {
+      return { success: false, error: "连接成功，但数据格式不匹配，未找到 homework 字段" };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message || "网络请求失败，请检查服务端地址" };
+  }
+}
+

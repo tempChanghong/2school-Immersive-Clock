@@ -29,7 +29,7 @@ const MINUTELY_PRECIP_POPUP_DISMISSED_KEY = "weather.minutely.popupDismissed";
  * 根据当前模式显示相应的时钟组件，处理HUD显示逻辑
  */
 export function ClockPage() {
-  const { mode, isModalOpen, study, isHomeworkOpen } = useAppState();
+  const { mode, isModalOpen, study, isHomeworkEnabled } = useAppState();
   const dispatch = useAppDispatch();
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hudContainerRef = useRef<HTMLDivElement | null>(null);
@@ -309,63 +309,70 @@ export function ClockPage() {
       onKeyDown={handleKeyDown}
       tabIndex={0}
       aria-label="时钟应用主界面"
+      style={{ flexDirection: "row" }}
     >
-      <div className={styles.schoolLogoContainer}>
-        <img src={schoolLogo} alt="School Logo" className={styles.schoolLogo} />
-        <span className={styles.schoolName}>天津市第二中学</span>
-      </div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", height: "100%", overflow: "hidden" }}>
+        <div className={styles.schoolLogoContainer}>
+          <img src={schoolLogo} alt="School Logo" className={styles.schoolLogo} />
+          <span className={styles.schoolName}>天津市第二中学</span>
+        </div>
 
-      <div
-        className={styles.timeDisplay}
-        id={`${mode}-panel`}
-        role="tabpanel"
-        data-tour="clock-area"
-      >
-        {renderTimeDisplay()}
-      </div>
-
-      <div
-        ref={hudContainerRef}
-        onFocusCapture={() => {
-          dispatch({ type: "SHOW_HUD" });
-          clearHudHideTimeout();
-        }}
-        onBlurCapture={(e) => {
-          const nextFocused = e.relatedTarget as Node | null;
-          if (nextFocused && hudContainerRef.current?.contains(nextFocused)) {
-            return;
-          }
-          if (isModalOpen) return;
-          scheduleHudAutoHide();
-        }}
-        onPointerDownCapture={() => {
-          dispatch({ type: "SHOW_HUD" });
-          clearHudHideTimeout();
-        }}
-      >
-        <HUD />
-      </div>
-
-      <AuthorInfo onVersionClick={handleVersionClick} />
-
-      {/* 仅在时钟页面显示的左下角指引按钮 */}
-      {mode === "clock" && (
-        <button
-          className={styles.tourButton}
-          onClick={() => {
-            startTour(true, {
-              onStart: () => {
-                dispatch({ type: "SHOW_HUD" });
-              },
-            });
-          }}
-          title="重播新手指引"
-          type="button"
-          aria-label="重播新手指引"
+        <div
+          className={styles.timeDisplay}
+          id={`${mode}-panel`}
+          role="tabpanel"
+          data-tour="clock-area"
         >
-          ?
-        </button>
-      )}
+          {renderTimeDisplay()}
+        </div>
+
+        <div
+          ref={hudContainerRef}
+          onFocusCapture={() => {
+            dispatch({ type: "SHOW_HUD" });
+            clearHudHideTimeout();
+          }}
+          onBlurCapture={(e) => {
+            const nextFocused = e.relatedTarget as Node | null;
+            if (nextFocused && hudContainerRef.current?.contains(nextFocused)) {
+              return;
+            }
+            if (isModalOpen) return;
+            scheduleHudAutoHide();
+          }}
+          onPointerDownCapture={() => {
+            dispatch({ type: "SHOW_HUD" });
+            clearHudHideTimeout();
+          }}
+        >
+          <HUD />
+        </div>
+
+        <AuthorInfo onVersionClick={handleVersionClick} />
+
+        {/* 仅在时钟页面显示的左下角指引按钮 */}
+        {mode === "clock" && (
+          <button
+            className={styles.tourButton}
+            onClick={() => {
+              startTour(true, {
+                onStart: () => {
+                  dispatch({ type: "SHOW_HUD" });
+                },
+              });
+            }}
+            title="重播新手指引"
+            type="button"
+            aria-label="重播新手指引"
+          >
+            ?
+          </button>
+        )}
+      </div>
+
+      <HomeworkBoard
+        isOpen={isHomeworkEnabled}
+      />
 
       {/* 设置按钮 - 只在自习模式下显示 */}
       {mode === "study" && (
@@ -376,11 +383,6 @@ export function ClockPage() {
       <SettingsPanel isOpen={showSettings} onClose={handleSettingsClose} />
 
       {isModalOpen && <CountdownModal />}
-
-      <HomeworkBoard
-        isOpen={isHomeworkOpen}
-        onClose={() => dispatch({ type: "TOGGLE_HOMEWORK" })}
-      />
 
       {/* 公告弹窗 */}
       <AnnouncementModal

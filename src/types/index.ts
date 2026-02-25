@@ -297,8 +297,8 @@ export interface AppState {
   announcement: AnnouncementState;
   /** 模态框是否打开 */
   isModalOpen: boolean;
-  /** 作业板是否打开 */
-  isHomeworkOpen: boolean;
+  /** 作业板是否启用 */
+  isHomeworkEnabled: boolean;
 }
 
 /**
@@ -341,7 +341,7 @@ export type AppAction =
   | { type: "SET_ANNOUNCEMENT_DONT_SHOW_AGAIN"; payload: boolean }
   | { type: "OPEN_MODAL" }
   | { type: "CLOSE_MODAL" }
-  | { type: "TOGGLE_HOMEWORK" }
+  | { type: "SET_HOMEWORK_ENABLED"; payload: boolean }
   | { type: "SET_STUDY_DISPLAY"; payload: StudyDisplaySettings }
   | { type: "SET_COUNTDOWN_ITEMS"; payload: CountdownItem[] }
   | { type: "SET_CAROUSEL_INTERVAL"; payload: number }
