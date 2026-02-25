@@ -26,18 +26,6 @@ const ANNOUNCEMENT_TABS: AnnouncementTabConfig[] = [
     filename: "announcement.md",
     icon: "📢",
   },
-  {
-    key: "changelog",
-    title: "更新日志",
-    filename: "changelog.md",
-    icon: "📝",
-  },
-  {
-    key: "feedback",
-    title: "意见反馈",
-    iframeSrc: "https://wj.qq.com/s2/25666249/lj9p/",
-    icon: "💬",
-  },
 ];
 
 /**
