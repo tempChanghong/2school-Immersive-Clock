@@ -11,6 +11,7 @@ import { SettingsButton } from "../../components/SettingsButton";
 import { SettingsPanel } from "../../components/SettingsPanel";
 import { Stopwatch } from "../../components/Stopwatch/Stopwatch";
 import { Study } from "../../components/Study/Study";
+import { HomeworkBoard } from "../../components/HomeworkBoard/HomeworkBoard";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
 import type { MessagePopupOpenDetail, MessagePopupType } from "../../types/messagePopup";
 import { startTimeSyncManager } from "../../utils/timeSync";
@@ -28,7 +29,7 @@ const MINUTELY_PRECIP_POPUP_DISMISSED_KEY = "weather.minutely.popupDismissed";
  * 根据当前模式显示相应的时钟组件，处理HUD显示逻辑
  */
 export function ClockPage() {
-  const { mode, isModalOpen, study } = useAppState();
+  const { mode, isModalOpen, study, isHomeworkOpen } = useAppState();
   const dispatch = useAppDispatch();
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hudContainerRef = useRef<HTMLDivElement | null>(null);
@@ -375,6 +376,11 @@ export function ClockPage() {
       <SettingsPanel isOpen={showSettings} onClose={handleSettingsClose} />
 
       {isModalOpen && <CountdownModal />}
+
+      <HomeworkBoard
+        isOpen={isHomeworkOpen}
+        onClose={() => dispatch({ type: "TOGGLE_HOMEWORK" })}
+      />
 
       {/* 公告弹窗 */}
       <AnnouncementModal

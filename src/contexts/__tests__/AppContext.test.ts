@@ -64,6 +64,7 @@ describe("appReducer", () => {
         lastShownTime: 0,
       },
       isModalOpen: false,
+      isHomeworkOpen: false,
     };
     vi.mocked(nowMs).mockReturnValue(1000);
   });

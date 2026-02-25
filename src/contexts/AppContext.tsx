@@ -84,6 +84,7 @@ const initialState: AppState = {
     lastShownTime: 0,
   },
   isModalOpen: false,
+  isHomeworkOpen: false,
 };
 
 /**
@@ -241,6 +242,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         isModalOpen: false,
+      };
+
+    case "TOGGLE_HOMEWORK":
+      return {
+        ...state,
+        isHomeworkOpen: !state.isHomeworkOpen,
       };
 
     case "SET_TARGET_YEAR":

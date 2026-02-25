@@ -56,6 +56,12 @@ export interface AppSettings {
       lastRttMs?: number;
       lastError?: string;
     };
+    classworks: {
+      serverUrl: string;
+      namespace: string;
+      password?: string;
+      autoRefreshIntervalMin: number;
+    };
   };
 
   study: {
@@ -152,6 +158,12 @@ const DEFAULT_SETTINGS: AppSettings = {
       lastSyncAt: 0,
       lastRttMs: undefined,
       lastError: undefined,
+    },
+    classworks: {
+      serverUrl: "https://kv-service.wuyuan.dev",
+      namespace: "",
+      password: "",
+      autoRefreshIntervalMin: 15,
     },
   },
   study: {
@@ -280,6 +292,7 @@ export function getAppSettings(): AppSettings {
         },
         weather: { ...DEFAULT_SETTINGS.general.weather, ...(parsed.general?.weather || {}) },
         timeSync: { ...DEFAULT_SETTINGS.general.timeSync, ...(parsed.general?.timeSync || {}) },
+        classworks: { ...DEFAULT_SETTINGS.general.classworks, ...(parsed.general?.classworks || {}) },
       },
       study: {
         ...DEFAULT_SETTINGS.study,
@@ -366,6 +379,9 @@ export function updateAppSettings(
         timeSync: generalUpdates.timeSync
           ? { ...current.general.timeSync, ...generalUpdates.timeSync }
           : current.general.timeSync,
+        classworks: generalUpdates.classworks
+          ? { ...current.general.classworks, ...generalUpdates.classworks }
+          : current.general.classworks,
       };
     }
     if (updates.study) {
