@@ -1,0 +1,110 @@
+/* 作者信息组件样式 */
+
+.authorInfo {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  z-index: 10;
+  pointer-events: auto;
+  transition: all 0.3s ease;
+}
+
+.version {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.by {
+  user-select: none;
+}
+
+.action {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    color 0.3s ease,
+    text-decoration-color 0.3s ease;
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.action:hover {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: underline;
+}
+
+.action:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* 整体信息块的悬停效果 */
+.authorInfo:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .authorInfo {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .authorInfo {
+    font-size: 0.65rem;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .authorInfo {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .authorInfo:hover {
+    color: #ffffff;
+  }
+
+  .action:hover {
+    color: #ffffff;
+  }
+}
+
+/* 降低动画模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  .action {
+    transition: none;
+  }
+
+  .authorInfo {
+    transition: none;
+  }
+
+  .authorInfo:hover {
+    transform: none;
+  }
+}
+
+/* 打印样式：打印时隐藏 */
+@media print {
+  .authorInfo {
+    display: none;
+  }
+}

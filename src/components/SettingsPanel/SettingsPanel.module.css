@@ -1,0 +1,441 @@
+/* SettingsPanel 特定样式 - 模态框样式已移至统一的Modal组件 */
+
+/* 设置容器和分组布局 */
+.settingsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settingsGroup {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.settingsGroup:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.groupTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: var(--font-ui);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.section {
+  margin-bottom: 1.5rem;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-ui);
+}
+
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.periodItem {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.periodItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.periodDisplay {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.periodDisplay:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.periodInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.periodName {
+  font-weight: 500;
+  color: #ffffff;
+  font-size: 1rem;
+  font-family: var(--font-ui);
+}
+
+.periodTime {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-family: var(--font-main);
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 0.375rem;
+}
+
+.editFormCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 0.375rem;
+}
+
+.timeSeparator {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: bold;
+  align-self: center;
+}
+
+.editActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .editForm {
+    gap: 0.75rem;
+  }
+
+  .editActions {
+    flex-direction: column;
+  }
+}
+
+/* 滑块与说明信息左右分栏布局 */
+.sliderWithInfo {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.sliderWrapper {
+  flex: 0 0 60%;
+  min-width: 300px;
+}
+
+.infoSide {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-family: var(--font-ui);
+}
+
+@media (max-width: 768px) {
+  .sliderWithInfo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .sliderWrapper {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.noiseCalibrationInfo {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.weatherInfo {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.infoText {
+  color: #ffffff;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-ui);
+}
+
+/* 统一链接样式，避免浏览器默认蓝色 */
+.infoText a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  transition:
+    color var(--transition-normal, 0.2s),
+    text-decoration-color var(--transition-normal, 0.2s);
+}
+
+.infoText a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.6);
+}
+
+.infoText a:focus-visible {
+  outline: 2px solid var(--accent-color, #03dac6);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 状态徽标：已校准/未校准指示点 */
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12);
+}
+
+.statusCalibrated {
+  background: #4caf50;
+  /* 绿色：已校准 */
+}
+
+.statusUncalibrated {
+  background: #f44336;
+  /* 红色：未校准 */
+}
+
+.helpText {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+  font-family: var(--font-ui);
+}
+
+/* 字体选择下拉（复用面板风格） */
+.selectOverride {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  min-width: 240px;
+  font-family: var(--font-ui);
+}
+
+.selectOverride:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.sliderContainer {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.sliderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.sliderLabel {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: var(--font-ui);
+}
+
+.sliderValue {
+  color: #4fc3f7;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: var(--font-main);
+}
+
+.noiseSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px;
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.noiseSlider::-webkit-slider-track {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.15) !important;
+  height: 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.noiseSlider:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.noiseSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: #ffffff !important;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.9) !important;
+}
+
+.noiseSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #f8f9fa;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.noiseSlider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+  background: #e9ecef;
+}
+
+.noiseSlider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.noiseSlider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  background: #f8f9fa;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.noiseSlider::-moz-range-thumb:active {
+  transform: scale(1.05);
+  background: #e9ecef;
+}
+
+.noiseSlider::-moz-range-track {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  height: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sliderRange {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .periodItem {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* Checkbox Grid Layout */
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 1.5rem;
+  row-gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 600px) {
+  .checkboxGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 桌面端紧凑布局：两列网格与更小的间距 */
+@media (min-width: 1024px) {
+  .settingsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .settingsGroup {
+    padding: 0.75rem;
+  }
+
+  .groupTitle {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.375rem;
+  }
+
+  .periodItem {
+    padding: 0.625rem;
+  }
+
+  .editForm {
+    gap: 0.625rem;
+    margin-top: 0.375rem;
+  }
+
+  .noiseCalibrationInfo,
+  .weatherInfo {
+    margin-bottom: 0.5rem;
+    padding: 0.625rem;
+  }
+}

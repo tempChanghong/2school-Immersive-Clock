@@ -1,0 +1,204 @@
+/* 课程表配置组件特定样式 */
+
+.scheduleList {
+  margin-bottom: 1.5rem;
+}
+
+.globalErrors {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 60, 60, 0.12);
+  border-radius: var(--border-radius-sm);
+}
+
+.globalErrorItem {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.globalHint {
+  margin-bottom: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.importError {
+  margin-top: 0.5rem;
+  color: rgba(255, 120, 120, 0.95);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.importSummary {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius-sm);
+}
+
+.importSummaryRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.importSummaryValue {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.importErrors {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.importErrorItem {
+  color: rgba(255, 200, 200, 0.95);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.importErrorMore {
+  margin-top: 0.25rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.8rem;
+}
+
+.importHint {
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.importActions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.periodItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.periodItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.periodNumber {
+  background: var(--button-primary-color);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.periodInputs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.periodMeta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 88px;
+}
+
+.durationText {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.rowError {
+  color: rgba(255, 120, 120, 0.95);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.rowActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* 输入框样式已迁移至 FormComponents */
+
+.timeInputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeSeparator {
+  color: var(--text-color);
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+/* 按钮样式已迁移至 FormComponents */
+
+/* 响应式设计 - 保留必要的布局调整 */
+@media (max-width: 768px) {
+  .periodItem {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .periodInputs {
+    order: 1;
+  }
+
+  .periodNumber {
+    order: 0;
+    align-self: flex-start;
+  }
+
+  .rowActions {
+    order: 2;
+    justify-content: flex-start;
+  }
+
+  .periodMeta {
+    justify-content: flex-start;
+    min-width: auto;
+  }
+
+  .timeInputs {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .timeSeparator {
+    display: none;
+  }
+}

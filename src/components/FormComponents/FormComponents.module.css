@@ -1,0 +1,1023 @@
+/* 统一表单组件样式 */
+
+/* 提升表单组件的层级，确保覆盖模式切换按钮（HUD） */
+.section,
+.inputGroup,
+.checkboxGroup,
+.radioGroup,
+.segmentedGroup,
+.buttonGroup,
+.row {
+  position: relative;
+  z-index: var(--z-form, 300);
+}
+
+/* 表单区域 */
+.section {
+  margin-bottom: var(--spacing-xl, 2rem);
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-lg, 12px);
+  position: relative;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  margin: 0 0 1rem 0;
+  color: var(--text-color, #ffffff);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.sectionTitle::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1.5rem;
+  height: 2px;
+  background: var(--accent-color, #03dac6);
+  border-radius: 1px;
+}
+
+/* 输入框样式 */
+.inputGroup {
+  position: relative;
+  margin-bottom: var(--spacing-md, 1rem);
+}
+
+.filePickerRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.filePickerDisplay {
+  flex: 1;
+  margin: 0;
+}
+
+.filePickerHiddenInput {
+  display: none;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color var(--transition-normal, 0.3s);
+}
+
+.input {
+  width: 100%;
+  padding: 0.875rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--border-radius-md, 8px);
+  color: var(--text-color, #ffffff);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  transition: all var(--transition-normal, 0.3s);
+  outline: none;
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.input:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.input:focus {
+  border-color: var(--accent-color, #03dac6);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.input.error {
+  border-color: var(--warning-color, #cf6679);
+  background: rgba(207, 102, 121, 0.1);
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* 选择器组件 */
+.selectWrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.select {
+  width: 100%;
+  padding: 0.875rem 2.5rem 0.875rem 0.875rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--border-radius-md, 8px);
+  color: var(--text-color, #ffffff);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 0.95rem;
+  cursor: pointer;
+  appearance: none;
+  transition: all var(--transition-normal, 0.3s);
+  outline: none;
+}
+
+.select:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.select:focus {
+  border-color: var(--accent-color, #03dac6);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.selectArrow {
+  position: absolute;
+  right: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color var(--transition-normal, 0.3s);
+}
+
+.selectWrapper:hover .selectArrow {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 复选框组件 */
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm, 0.5rem);
+}
+
+.checkboxWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: opacity var(--transition-normal, 0.3s);
+}
+
+.checkboxWrapper:hover {
+  opacity: 0.9;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--text-color, #ffffff);
+  transition: color var(--transition-fast, 0.2s);
+  user-select: none;
+  min-height: 2rem;
+  padding: 0.15rem 0.25rem;
+}
+
+.checkboxLabel:hover {
+  color: var(--accent-color, #03dac6);
+}
+
+.checkboxInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkboxCustom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--border-radius-sm, 4px);
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal, 0.3s);
+  flex-shrink: 0;
+}
+
+.checkboxCustom:hover {
+  border-color: var(--accent-color, #03dac6);
+  background: linear-gradient(135deg, rgba(3, 218, 198, 0.1) 0%, rgba(3, 218, 198, 0.05) 100%);
+  transform: scale(1.05);
+}
+
+.checkboxInput:checked + .checkboxCustom {
+  background: var(--accent-color, #03dac6);
+  border-color: var(--accent-color, #03dac6);
+}
+
+.checkboxInput:focus + .checkboxCustom {
+  border-color: var(--accent-color, #03dac6);
+}
+
+.checkboxIcon {
+  width: 12px;
+  height: 10px;
+  opacity: 0;
+  transition: opacity var(--transition-normal, 0.3s);
+  color: var(--background-color, #121212);
+}
+
+.checkboxInput:checked + .checkboxCustom .checkboxIcon {
+  opacity: 1;
+}
+
+.checkboxInput:disabled + .checkboxCustom {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkboxText {
+  flex: 1;
+  line-height: 1.4;
+}
+
+/* 单选框组件 */
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 0.5rem);
+}
+
+.radioOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.radioWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: opacity var(--transition-normal, 0.3s);
+}
+
+.radioWrapper:hover {
+  opacity: 0.9;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--text-color, #ffffff);
+  transition: color var(--transition-fast, 0.2s);
+  user-select: none;
+}
+
+.radioLabel:hover {
+  color: var(--accent-color, #03dac6);
+}
+
+.radioInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radioCustom {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal, 0.3s);
+  flex-shrink: 0;
+}
+
+.radioCustom::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--bg-color, #121212);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity var(--transition-normal, 0.3s);
+}
+
+.radioCustom:hover {
+  border-color: var(--accent-color, #03dac6);
+  background: linear-gradient(135deg, rgba(3, 218, 198, 0.1) 0%, rgba(3, 218, 198, 0.05) 100%);
+  transform: scale(1.05);
+}
+
+.radioInput:checked + .radioCustom {
+  background: var(--accent-color, #03dac6);
+  border-color: var(--accent-color, #03dac6);
+}
+
+.radioInput:checked + .radioCustom::after {
+  opacity: 1;
+}
+
+.radioInput:focus + .radioCustom {
+  border-color: var(--accent-color, #03dac6);
+}
+
+.radioInput:disabled + .radioCustom {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.radioText {
+  flex: 1;
+  line-height: 1.4;
+}
+
+/* 分段选择（Segmented Control） */
+.segmentedGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 0.5rem);
+}
+
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.segmentedOption {
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  color: var(--text-color, #ffffff);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.2s);
+}
+
+.segmentedOption:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.segmentedOptionActive {
+  background: var(--accent-color, #03dac6);
+  color: var(--background-color, #121212);
+}
+
+.segmentedOption:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .segmentedOption {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+}
+
+/* 输入变体 */
+.input.time {
+  font-family: var(--font-mono, "Fira Code", "Monaco", "Consolas", monospace);
+  width: 80px;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.input.number {
+  width: 120px;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.input[type="number"]::-webkit-outer-spin-button,
+.input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.errorText {
+  color: var(--warning-color, #cf6679);
+  font-size: 0.8rem;
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-weight: 500;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  opacity: 0.9;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.errorText::before {
+  content: "⚠";
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 0.9;
+    transform: translateY(0);
+  }
+}
+
+/* 滑动条组件样式 */
+.sliderGroup {
+  margin-bottom: var(--spacing-md, 1rem);
+}
+
+.sliderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.sliderLabel {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+
+.sliderValue {
+  color: var(--accent-color, #03dac6);
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--font-main, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.slider:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.slider:focus {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.slider::-webkit-slider-track {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.15);
+  height: 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #f8f9fa;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.slider::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+  background: #e9ecef;
+}
+
+.slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  background: #f8f9fa;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.slider::-moz-range-thumb:active {
+  transform: scale(1.05);
+  background: #e9ecef;
+}
+
+.slider::-moz-range-track {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  height: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sliderRange {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-family: var(--font-main, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 按钮组件 */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius-md, 8px);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-weight: 500;
+  text-decoration: none;
+  user-select: none;
+  cursor: pointer;
+  transition: all var(--transition-normal, 0.3s);
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-color, #ffffff);
+}
+
+.button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--accent-color, #03dac6);
+  outline-offset: 2px;
+}
+
+/* 按钮变体 */
+.button.primary {
+  background: var(--accent-color, #03dac6);
+  border-color: var(--accent-color, #03dac6);
+  color: var(--bg-color, #121212);
+}
+
+.button.primary:hover {
+  background: rgba(3, 218, 198, 0.9);
+  border-color: rgba(3, 218, 198, 0.9);
+}
+
+.button.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-color, #ffffff);
+}
+
+.button.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.button.danger {
+  background: var(--warning-color, #cf6679);
+  border-color: var(--warning-color, #cf6679);
+  color: var(--text-color, #ffffff);
+}
+
+.button.danger:hover {
+  background: rgba(207, 102, 121, 0.9);
+  border-color: rgba(207, 102, 121, 0.9);
+}
+
+.button.success {
+  background: #4caf50;
+  border-color: #4caf50;
+  color: var(--text-color, #ffffff);
+}
+
+.button.success:hover {
+  background: rgba(76, 175, 80, 0.9);
+  border-color: rgba(76, 175, 80, 0.9);
+}
+
+/* 透明（ghost）按钮：无背景、无边框，适用于底部工具条 */
+.button.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.button.ghost:hover {
+  background: transparent;
+  border-color: transparent;
+  transform: translateY(-1px);
+}
+
+.button.ghost:disabled {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* 按钮尺寸 */
+.button.sm {
+  padding: var(--spacing-xs, 0.5rem) var(--spacing-sm, 0.75rem);
+  font-size: 0.85rem;
+}
+
+.button.md {
+  padding: var(--spacing-sm, 0.75rem) var(--spacing-md, 1rem);
+  font-size: 0.9rem;
+}
+
+.button.lg {
+  padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
+  font-size: 1rem;
+}
+
+.buttonIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 加载动画 */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 按钮组 */
+.buttonGroup {
+  display: flex;
+  gap: var(--spacing-sm, 0.75rem);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.buttonGroup.left {
+  justify-content: flex-start;
+}
+
+.buttonGroup.center {
+  justify-content: center;
+}
+
+.buttonGroup.right {
+  justify-content: flex-end;
+}
+
+/* 按钮组内的按钮间距优化 */
+.buttonGroup .button + .button {
+  margin-left: 0;
+}
+
+/* 按钮组的视觉分组效果 */
+.buttonGroup {
+  padding: var(--spacing-xs, 0.25rem);
+  border-radius: var(--border-radius-lg, 12px);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 表单行 */
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-md, 8px);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background-color var(--transition-normal, 0.3s);
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.row.gap-sm {
+  column-gap: var(--spacing-xs, 0.5rem);
+  row-gap: var(--spacing-sm, 0.625rem);
+}
+
+.row.gap-md {
+  column-gap: var(--spacing-sm, 0.75rem);
+  row-gap: var(--spacing-md, 1rem);
+}
+
+.row.gap-lg {
+  column-gap: var(--spacing-md, 1rem);
+  row-gap: var(--spacing-md, 1rem);
+}
+
+.row.align-start {
+  align-items: flex-start;
+}
+
+.row.align-center {
+  align-items: center;
+}
+
+.row.align-end {
+  align-items: flex-end;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .section {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .sectionTitle {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+    padding: 0.5rem;
+  }
+
+  .buttonGroup.left,
+  .buttonGroup.center,
+  .buttonGroup.right {
+    justify-content: stretch;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem;
+  }
+
+  .filePickerRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .input.time,
+  .input.number {
+    width: 100%;
+  }
+
+  .selectWrapper {
+    width: 100%;
+  }
+
+  .radioOptions {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .sectionTitle {
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .sectionTitle::after {
+    width: 1.5rem;
+    height: 1.5px;
+  }
+
+  .input {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .select {
+    padding: 0.75rem 2rem 0.75rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .button.sm {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .button.md {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.85rem;
+  }
+
+  .button.lg {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .checkboxCustom,
+  .radioCustom {
+    width: 18px;
+    height: 18px;
+  }
+
+  .checkboxIcon {
+    width: 10px;
+    height: 8px;
+  }
+
+  .radioCustom::after {
+    width: 6px;
+    height: 6px;
+  }
+
+  .row {
+    padding: 0.5rem;
+  }
+}
+
+/* 减少动画偏好支持 */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .spinner {
+    animation: none;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .input {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .button {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* 桌面端紧凑覆盖：在大屏上减少内外间距以提高信息密度 */
+@media (min-width: 1024px) {
+  .section {
+    padding: 0.75rem;
+    margin-bottom: var(--spacing-lg, 0.5rem);
+  }
+
+  .sectionTitle {
+    margin: 0 0 0.75rem 0;
+    padding-bottom: 0.375rem;
+  }
+
+  .inputGroup {
+    margin-bottom: var(--spacing-sm, 0.5rem);
+  }
+
+  .label {
+    margin-bottom: 0.375rem;
+  }
+
+  .input {
+    padding: 0.625rem;
+    font-size: 0.9rem;
+  }
+
+  .select {
+    padding: 0.625rem 2rem 0.625rem 0.625rem;
+    font-size: 0.9rem;
+  }
+
+  .sliderHeader {
+    margin-bottom: 0.5rem;
+  }
+
+  .sliderRange {
+    margin-top: 0.25rem;
+    font-size: 0.775rem;
+  }
+
+  .row {
+    padding: 0.375rem;
+  }
+
+  .radioOptions {
+    gap: 0.5rem;
+  }
+
+  .radioLabel {
+    gap: 0.5rem;
+  }
+}

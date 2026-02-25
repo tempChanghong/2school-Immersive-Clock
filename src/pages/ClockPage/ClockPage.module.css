@@ -1,0 +1,215 @@
+/* 时钟页面组件样式 */
+
+.clockPage {
+  height: 100vh;
+  width: 100vw;
+  background: var(--background-color);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  outline: none;
+  /* 禁用移动端触摸高亮 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.clockPage:focus {
+  outline: none;
+}
+
+.timeDisplay {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  position: relative;
+  z-index: 1;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .timeDisplay {
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .timeDisplay {
+    padding: var(--spacing-sm);
+  }
+}
+
+@media (max-height: 600px) {
+  .timeDisplay {
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+}
+
+/* 让页面占满视口 */
+.clockPage {
+  min-height: 100vh;
+  min-width: 100vw;
+}
+
+/* 文本选择禁用已在上方 .clockPage 主规则中处理 */
+
+/* 模式切换的平滑过渡 */
+.timeDisplay {
+  transition: all var(--transition-normal);
+}
+
+/* 背景渐变以提升视觉效果 */
+.clockPage::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.01) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 指引按钮 - 左下角贴边 */
+.tourButton {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  background: transparent;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  z-index: 10;
+  padding: 4px 8px;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+}
+
+.tourButton:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.tourButton:active {
+  transform: scale(0.95);
+}
+
+/* 无障碍适配优化 */
+@media (prefers-reduced-motion: reduce) {
+  .timeDisplay {
+    transition: none;
+  }
+
+  .tourButton {
+    transition: none;
+  }
+
+  .tourButton:hover,
+  .tourButton:active {
+    transform: none;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .clockPage {
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .clockPage::before {
+    display: none;
+  }
+
+  .tourButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+}
+
+/* 打印样式 */
+@media print {
+  .clockPage {
+    background: white;
+    color: black;
+  }
+
+  .clockPage::before {
+    display: none;
+  }
+
+  .tourButton {
+    display: none;
+  }
+
+  .schoolLogoContainer {
+    display: none;
+  }
+}
+
+/* 学校 Logo 样式 */
+.schoolLogoContainer {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 50;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.schoolLogo {
+  height: 36px;
+  width: auto;
+  opacity: 0.85;
+  transition: opacity var(--transition-normal);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+@media (max-width: 768px) {
+  .schoolLogoContainer {
+    top: 1.25rem;
+    left: 1.25rem;
+  }
+  .schoolLogo {
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .schoolLogoContainer {
+    top: 1rem;
+    left: 1rem;
+  }
+  .schoolLogo {
+    height: 28px;
+  }
+}
+
+@media (max-height: 600px) {
+  .schoolLogoContainer {
+    top: 1rem;
+    left: 1rem;
+  }
+  .schoolLogo {
+    height: 28px;
+  }
+}

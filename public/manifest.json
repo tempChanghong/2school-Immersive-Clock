@@ -1,0 +1,32 @@
+{
+  "name": "天津二中自习时钟",
+  "short_name": "天津二中自习时钟",
+  "description": "专为天津市第二中学学子打造的沉浸式自习辅助工具",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
+  "display": "fullscreen",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["utilities", "productivity", "tools"],
+  "lang": "zh-CN"
+}

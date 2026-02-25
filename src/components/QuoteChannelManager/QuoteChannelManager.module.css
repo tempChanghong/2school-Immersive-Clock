@@ -1,0 +1,427 @@
+/* 语录渠道管理组件样式 */
+
+.infoText {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--border-radius-md);
+}
+
+.loadingIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.channelList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+.channelItem {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.channelItem::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.channelItem:hover {
+  /* 移除颜色变化，仅保留轻微动效 */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.channelItem:hover::before {
+  /* 禁用顶部渐变条的显隐变化，避免悬停颜色效果 */
+  opacity: 0;
+}
+
+.channelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+
+.channelInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.channelName {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.channelType {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: var(--border-radius-full);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.channelControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.weightControl {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 36px;
+}
+
+.weightLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.weightInput {
+  width: 50px !important;
+  min-width: 50px;
+  max-width: 50px;
+  height: 32px !important;
+  padding: 4px 6px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem !important;
+  line-height: 1.2 !important;
+  border-radius: 6px !important;
+
+  /* 隐藏默认的数字输入框箭头 */
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* 隐藏 Chrome/Safari 的数字输入框微调箭头 */
+.weightInput::-webkit-outer-spin-button,
+.weightInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+/* 隐藏 Firefox 的数字输入框微调箭头 */
+.weightInput[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.toggleButton {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.toggleButton:hover {
+  /* 移除颜色变化，仅保留缩放动效 */
+  transform: scale(1.05);
+}
+
+.toggleIconEnabled {
+  color: #4ade80;
+}
+
+.toggleIconDisabled {
+  color: var(--text-secondary);
+}
+
+.settingsButton {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+}
+
+.settingsButton:hover {
+  /* 移除颜色变化，仅保留缩放动效 */
+  transform: scale(1.05);
+}
+
+.categorySettings {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.categoryTitle {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.categoryTitle::before {
+  content: "🏷️";
+  font-size: var(--font-size-sm);
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.categoryItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.categoryItem:hover {
+  /* 移除颜色变化，仅保留位移动效 */
+  transform: translateY(-1px);
+}
+
+.categoryCheckbox {
+  margin: 0;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.categoryLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+}
+
+.categoryInfo {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.helpText {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.emptyState p {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-md);
+}
+
+/* 语录编辑器区域 */
+.editorSection {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.editorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.editorTitle {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.importInfo {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.quoteList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.quoteItem {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.quoteInput {
+  flex: 1;
+}
+
+/* 单文本框编辑模式样式 */
+.quoteTextarea {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+}
+
+.quoteActions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.errorText {
+  color: #ff6b6b;
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-sm);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .channelHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .channelControls {
+    justify-content: space-between;
+  }
+
+  .categoryGrid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--spacing-xs);
+  }
+
+  .weightControl {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .weightInput {
+    width: 80px !important;
+  }
+
+  .quoteItem {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .channelItem {
+    border-width: 2px;
+  }
+
+  .toggleIconEnabled {
+    color: var(--success-color-high-contrast, #00aa00);
+  }
+
+  .toggleIconDisabled {
+    color: var(--text-secondary-high-contrast, #666666);
+  }
+}
+
+/* 减少动画偏好支持 */
+@media (prefers-reduced-motion: reduce) {
+  .loadingIcon {
+    animation: none;
+  }
+
+  .channelItem,
+  .toggleButton,
+  .settingsButton,
+  .categoryItem {
+    transition: none;
+  }
+}
