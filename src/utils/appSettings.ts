@@ -61,7 +61,7 @@ export interface AppSettings {
       serverUrl: string;
       namespace: string;
       password?: string;
-      autoRefreshIntervalMin: number;
+      autoRefreshIntervalSec: number;
     };
   };
 
@@ -165,7 +165,7 @@ const DEFAULT_SETTINGS: AppSettings = {
       serverUrl: "https://kv-service.wuyuan.dev",
       namespace: "",
       password: "",
-      autoRefreshIntervalMin: 15,
+      autoRefreshIntervalSec: 30,
     },
   },
   study: {

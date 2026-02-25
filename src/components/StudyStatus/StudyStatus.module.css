@@ -1,7 +1,7 @@
 /* 智能自习状态管理组件样式 */
 .studyStatus {
   position: absolute;
-  top: 60px; /* Adjust below logo */
+  top: 90px; /* 调整以免遮挡校徽 */
   left: 50%;
   transform: translateX(-50%);
   z-index: 999;

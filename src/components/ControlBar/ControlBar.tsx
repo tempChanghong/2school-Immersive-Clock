@@ -4,7 +4,6 @@ import { useAppState, useAppDispatch } from "../../contexts/AppContext";
 import { useFullscreen } from "../../hooks/useFullscreen";
 import { FormButton } from "../FormComponents";
 import { PlayIcon, PauseIcon, ResetIcon, MaximizeIcon, MinimizeIcon } from "../Icons";
-import { BookOpen } from "lucide-react";
 
 import styles from "./ControlBar.module.css";
 
@@ -161,17 +160,6 @@ export function ControlBar() {
       </div>
 
       <div className={styles.globalControls}>
-        <FormButton
-          className={styles.controlButton}
-          onClick={() => dispatch({ type: "TOGGLE_HOMEWORK" })}
-          aria-label="打开作业板"
-          title="作业板"
-          variant="ghost"
-          size="sm"
-          icon={<BookOpen className={styles.icon} size={18} aria-hidden={true} />}
-        >
-          作业
-        </FormButton>
         <FormButton
           id="tour-fullscreen-btn"
           className={styles.controlButton}

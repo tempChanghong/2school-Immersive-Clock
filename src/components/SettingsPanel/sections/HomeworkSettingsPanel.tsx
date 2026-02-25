@@ -14,6 +14,7 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
   const [cwServerUrl, setCwServerUrl] = useState("");
   const [cwNamespace, setCwNamespace] = useState("");
   const [cwPassword, setCwPassword] = useState("");
+  const [cwAutoRefreshInterval, setCwAutoRefreshInterval] = useState(30);
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testError, setTestError] = useState("");
 
@@ -26,6 +27,7 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
       setCwServerUrl(cw?.serverUrl || "https://kv-service.wuyuan.dev");
       setCwNamespace(cw?.namespace || "");
       setCwPassword(cw?.password || "");
+      setCwAutoRefreshInterval(cw?.autoRefreshIntervalSec ?? 30);
     } catch {}
   }, []);
 
@@ -37,13 +39,13 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
           serverUrl: cwServerUrl.trim() || "https://kv-service.wuyuan.dev",
           namespace: cwNamespace.trim(),
           password: cwPassword.trim(),
-          autoRefreshIntervalMin: 15,
+          autoRefreshIntervalSec: cwAutoRefreshInterval,
         }
       });
       // Toggle immediately for better UX
       dispatch({ type: "SET_HOMEWORK_ENABLED", payload: enabled });
     });
-  }, [onRegisterSave, enabled, cwServerUrl, cwNamespace, cwPassword, dispatch]);
+  }, [onRegisterSave, enabled, cwServerUrl, cwNamespace, cwPassword, cwAutoRefreshInterval, dispatch]);
 
   const handleTestConnection = useCallback(async () => {
     if (!cwServerUrl.trim() || !cwNamespace.trim()) {
@@ -114,6 +116,15 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
               value={cwPassword}
               onChange={(e) => setCwPassword(e.target.value)}
               placeholder="请输入应用 Token"
+            />
+          </FormRow>
+          <FormRow gap="sm">
+            <FormInput
+              label="自动刷新间隔 (秒)"
+              type="number"
+              value={String(cwAutoRefreshInterval)}
+              onChange={(e) => setCwAutoRefreshInterval(Number(e.target.value) || 30)}
+              placeholder="30"
             />
           </FormRow>
 

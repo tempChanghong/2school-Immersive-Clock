@@ -4,6 +4,7 @@ import { X, RefreshCw } from "lucide-react";
 import { useAppState } from "../../contexts/AppContext";
 import { fetchHomeworkData } from "../../services/classworksService";
 import type { HomeworkItem } from "../../types/classworks";
+import { getAppSettings } from "../../utils/appSettings";
 
 import styles from "./HomeworkBoard.module.css";
 
@@ -35,6 +36,13 @@ export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
   useEffect(() => {
     if (isOpen) {
       loadData();
+      
+      const refreshSec = getAppSettings().general.classworks.autoRefreshIntervalSec || 30;
+      // Minimum 5 seconds to prevent extremely fast API requests
+      const intervalMs = Math.max(5, refreshSec) * 1000;
+      
+      const timerId = setInterval(loadData, intervalMs);
+      return () => clearInterval(timerId);
     }
   }, [isOpen, loadData]);
 

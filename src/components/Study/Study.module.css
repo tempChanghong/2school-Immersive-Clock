@@ -31,7 +31,7 @@
 /* 进度条下方左侧 - 天气和噪音监测 */
 .topLeft {
   position: absolute;
-  top: 104px; /* 从原先的 80px 往下调整以避让放大后的校徽 */
+  top: 140px; /* 从原先的 80px 往下调整以避让放大后的校徽，增加呼吸感 */
   left: 24px;
   margin: 0;
   z-index: 10;
@@ -45,7 +45,7 @@
 /* 进度条下方右侧 - 高考倒计时和励志语录 */
 .topRight {
   position: absolute;
-  top: 104px;
+  top: 140px;
   right: 24px;
   margin: 0;
   text-align: right;
