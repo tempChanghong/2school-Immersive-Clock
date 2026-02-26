@@ -43,6 +43,14 @@ class SocketService {
       }
     });
     
+    this.socket.on("joined", (info: any) => {
+      console.log("[SocketService] Successfully joined channel:", info);
+    });
+    
+    this.socket.on("join-error", (error: any) => {
+      console.error("[SocketService] Failed to join channel:", error);
+    });
+    
     this.socket.on("disconnect", (reason) => {
       console.log(`[SocketService] Disconnected. Reason: ${reason}`);
     });
@@ -57,8 +65,8 @@ class SocketService {
     // Listen to urgent notices
     this.socket.on("urgent-notice", (data: any) => {
       console.log("[SocketService] Received urgent-notice:", data);
-      const urgency = data?.content?.urgency === "info" ? "info" : "urgent";
-      const notification = this.mapEventToNotification(data, urgency);
+      const isUrgentLevel = data?.urgency === "info" || data?.content?.urgency === "info" ? "info" : "urgent";
+      const notification = this.mapEventToNotification(data, isUrgentLevel);
       this.urgentNoticeListeners.forEach(listener => listener(notification, data));
     });
   }
@@ -112,9 +120,9 @@ class SocketService {
   
   private mapEventToNotification(data: any, defaultLevel: NotificationLevel): ClassworksNotification {
     return {
-      id: data?.content?.notificationId || data?.eventId || `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      level: data?.content?.isUrgent ? "urgent" : defaultLevel,
-      message: data?.content?.message || "收到一条新通知",
+      id: data?.notificationId || data?.content?.notificationId || data?.eventId || `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      level: (data?.isUrgent || data?.content?.isUrgent) ? "urgent" : defaultLevel,
+      message: data?.message || data?.content?.message || "收到一条新通知",
       timestamp: data?.timestamp || new Date().toISOString(),
       senderInfo: data?.senderInfo || data?.content?.senderInfo,
       eventId: data?.eventId

@@ -170,6 +170,46 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
               </FormButton>
             </FormRow>
           </div>
+          
+          <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ marginBottom: "12px", fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>开发调试: 通知预览</div>
+            <FormRow gap="sm">
+              <FormButton 
+                variant="secondary" 
+                onClick={() => {
+                  dispatch({
+                    type: "ADD_NOTIFICATION",
+                    payload: {
+                      id: `debug-info-${Date.now()}`,
+                      level: "info",
+                      message: "这是一条测试的普通通知，几秒后会自动消失。",
+                      senderInfo: { deviceName: "本地调试" },
+                      timestamp: new Date().toISOString()
+                    }
+                  });
+                }}
+              >
+                测试普通通知
+              </FormButton>
+              <FormButton 
+                variant="secondary" 
+                onClick={() => {
+                  dispatch({
+                    type: "ADD_NOTIFICATION",
+                    payload: {
+                      id: `debug-urgent-${Date.now()}`,
+                      level: "urgent",
+                      message: "这是一条测试的紧急通知！需要您手动确认以关闭。",
+                      senderInfo: { deviceName: "本地调试", deviceType: "admin" },
+                      timestamp: new Date().toISOString()
+                    }
+                  });
+                }}
+              >
+                测试紧急通知
+              </FormButton>
+            </FormRow>
+          </div>
         </div>
       </FormSection>
     </div>
