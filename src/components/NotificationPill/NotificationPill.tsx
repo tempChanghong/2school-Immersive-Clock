@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Bell } from "lucide-react";
 
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
@@ -36,37 +36,47 @@ export const NotificationPill: React.FC = () => {
   const dispatch = useAppDispatch();
   const [isVisible, setIsVisible] = useState(false);
   const [displayNotif, setDisplayNotif] = useState<any>(null);
+  const timersRef = useRef<{ show?: number; hide?: number; dismiss?: number }>({});
   
   // We process the queue by taking the oldest info notification
   const infoNotifications = notifications.filter(n => n.level === "info");
-  const activeNotification = infoNotifications[infoNotifications.length - 1]; 
   
   useEffect(() => {
-    if (activeNotification && !isVisible && (!displayNotif || displayNotif.id !== activeNotification.id)) {
-      setDisplayNotif(activeNotification);
-      
-      const showTimer = setTimeout(() => {
+    if (infoNotifications.length > 0 && !displayNotif) {
+      setDisplayNotif(infoNotifications[0]);
+    }
+  }, [infoNotifications, displayNotif]);
+  
+  useEffect(() => {
+    if (displayNotif) {
+      const showTimer = window.setTimeout(() => {
         setIsVisible(true);
         const settings = getAppSettings().general.classworks;
         if (settings.soundEnabled) {
           playInfoSound();
         }
-      }, 100);
+      }, 50);
       
-      const hideTimer = setTimeout(() => {
+      const hideTimer = window.setTimeout(() => {
         setIsVisible(false);
-        setTimeout(() => {
-          dispatch({ type: "DISMISS_NOTIFICATION", payload: activeNotification.id });
-          setDisplayNotif(null);
-        }, 500); // Wait for transition
       }, 5000); // 5 seconds display time
       
+      const dismissTimer = window.setTimeout(() => {
+        dispatch({ type: "DISMISS_NOTIFICATION", payload: displayNotif.id });
+        setDisplayNotif(null);
+      }, 5500); // Wait for exit transition
+      
+      timersRef.current = { show: showTimer, hide: hideTimer, dismiss: dismissTimer };
+      
       return () => {
-        clearTimeout(showTimer);
-        clearTimeout(hideTimer);
+        window.clearTimeout(timersRef.current.show);
+        window.clearTimeout(timersRef.current.hide);
+        window.clearTimeout(timersRef.current.dismiss);
       };
+    } else {
+      setIsVisible(false);
     }
-  }, [activeNotification, isVisible, displayNotif, dispatch]);
+  }, [displayNotif, dispatch]);
   
   if (!displayNotif) return null;
   
