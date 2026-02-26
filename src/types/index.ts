@@ -1,3 +1,5 @@
+import { ClassworksNotification } from "./classworks";
+
 /**
  * 公告选项卡类型
  */
@@ -299,6 +301,10 @@ export interface AppState {
   isModalOpen: boolean;
   /** 作业板是否启用 */
   isHomeworkEnabled: boolean;
+  /** 通知列表 */
+  notifications: ClassworksNotification[];
+  /** 当前展示的紧急通知 */
+  currentUrgentNotification: ClassworksNotification | null;
 }
 
 /**
@@ -357,4 +363,7 @@ export type AppAction =
   | { type: "SET_ERROR_CENTER_MODE"; payload: "off" | "memory" | "persist" }
   | { type: "SET_AIR_QUALITY_ALERT_ENABLED"; payload: boolean }
   | { type: "SET_SUNRISE_SUNSET_ALERT_ENABLED"; payload: boolean }
-  | { type: "SET_CLASS_END_FORECAST_ENABLED"; payload: boolean };
+  | { type: "SET_CLASS_END_FORECAST_ENABLED"; payload: boolean }
+  | { type: "ADD_NOTIFICATION"; payload: ClassworksNotification }
+  | { type: "DISMISS_NOTIFICATION"; payload: string }
+  | { type: "DISMISS_URGENT_NOTIFICATION" };

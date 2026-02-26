@@ -10,3 +10,19 @@ export interface HomeworkItem {
 export interface HomeworkResponse {
   [key: string]: any;
 }
+
+export type NotificationLevel = "info" | "urgent";
+
+export interface ClassworksNotification {
+  id: string; // Used for deduplication
+  level: NotificationLevel;
+  message: string;
+  timestamp: string;
+  senderInfo?: {
+    appId?: string;
+    deviceType?: string;
+    deviceName?: string;
+    note?: string;
+  };
+  eventId?: string; // Original event ID from socket
+}

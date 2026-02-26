@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, ReactNode } from "react";
 
 import { STOPWATCH_TICK_MS } from "../constants/timer";
 import { AppState, AppAction, StudyState, QuoteChannelState, QuoteSettingsState } from "../types";
+import { ClassworksNotification } from "../types/classworks";
 import { getAppSettings, updateAppSettings, updateStudySettings } from "../utils/appSettings";
 import { setErrorCenterMode } from "../utils/errorCenter";
 import { getStartupModeFromSettings } from "../utils/startupMode";
@@ -85,6 +86,8 @@ const initialState: AppState = {
   },
   isModalOpen: false,
   isHomeworkEnabled: getAppSettings().general.classworks.enabled,
+  notifications: [],
+  currentUrgentNotification: null,
 };
 
 /**
@@ -730,6 +733,29 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         quoteSettings: newQuoteSettings,
+      };
+
+    case "ADD_NOTIFICATION": {
+      const isUrgent = action.payload.level === "urgent";
+      const existingNotifs = state.notifications.filter(n => n.id !== action.payload.id);
+      
+      return {
+        ...state,
+        notifications: [action.payload, ...existingNotifs].slice(0, 100),
+        currentUrgentNotification: isUrgent ? action.payload : state.currentUrgentNotification
+      };
+    }
+
+    case "DISMISS_NOTIFICATION":
+      return {
+        ...state,
+        notifications: state.notifications.filter(n => n.id !== action.payload)
+      };
+
+    case "DISMISS_URGENT_NOTIFICATION":
+      return {
+        ...state,
+        currentUrgentNotification: null
       };
 
     default:

@@ -5,17 +5,20 @@ import { AuthorInfo } from "../../components/AuthorInfo/AuthorInfo";
 import { Clock } from "../../components/Clock/Clock";
 import { Countdown } from "../../components/Countdown/Countdown";
 import { CountdownModal } from "../../components/CountdownModal/CountdownModal";
+import { HomeworkBoard } from "../../components/HomeworkBoard/HomeworkBoard";
 import { HUD } from "../../components/HUD/HUD";
 import MessagePopup from "../../components/MessagePopup/MessagePopup";
+import { NotificationPill } from "../../components/NotificationPill/NotificationPill";
 import { SettingsButton } from "../../components/SettingsButton";
 import { SettingsPanel } from "../../components/SettingsPanel";
 import { Stopwatch } from "../../components/Stopwatch/Stopwatch";
 import { Study } from "../../components/Study/Study";
-import { HomeworkBoard } from "../../components/HomeworkBoard/HomeworkBoard";
+import { UrgentNotificationModal } from "../../components/UrgentNotificationModal/UrgentNotificationModal";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
+import { useClassworksSocket } from "../../hooks/useClassworksSocket";
+import schoolLogo from "../../icons/school.png";
 import type { MessagePopupOpenDetail, MessagePopupType } from "../../types/messagePopup";
 import { startTimeSyncManager } from "../../utils/timeSync";
-import schoolLogo from "../../icons/school.png";
 import { startTour, isTourActive } from "../../utils/tour";
 
 import styles from "./ClockPage.module.css";
@@ -45,6 +48,9 @@ export function ClockPage() {
       themeColor?: string;
     }>
   >([]);
+
+  // Initialize Classworks Socket connection map to app state
+  useClassworksSocket();
 
   // 跟踪模式变化
   useEffect(() => {
@@ -390,6 +396,10 @@ export function ClockPage() {
         onClose={handleAnnouncementClose}
         initialTab="announcement"
       />
+
+      {/* Classworks Notifications */}
+      <NotificationPill />
+      <UrgentNotificationModal />
 
       {/* 全局消息弹窗堆叠容器：通过事件触发，不受设置面板卸载影响 */}
       {globalPopups.length > 0 && (

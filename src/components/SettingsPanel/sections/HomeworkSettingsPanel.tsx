@@ -15,6 +15,8 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
   const [cwNamespace, setCwNamespace] = useState("");
   const [cwPassword, setCwPassword] = useState("");
   const [cwAutoRefreshInterval, setCwAutoRefreshInterval] = useState(30);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testError, setTestError] = useState("");
 
@@ -28,6 +30,8 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
       setCwNamespace(cw?.namespace || "");
       setCwPassword(cw?.password || "");
       setCwAutoRefreshInterval(cw?.autoRefreshIntervalSec ?? 30);
+      setNotificationsEnabled(cw?.notificationsEnabled ?? true);
+      setSoundEnabled(cw?.soundEnabled ?? false);
     } catch {}
   }, []);
 
@@ -40,12 +44,14 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
           namespace: cwNamespace.trim(),
           password: cwPassword.trim(),
           autoRefreshIntervalSec: cwAutoRefreshInterval,
+          notificationsEnabled,
+          soundEnabled,
         }
       });
       // Toggle immediately for better UX
       dispatch({ type: "SET_HOMEWORK_ENABLED", payload: enabled });
     });
-  }, [onRegisterSave, enabled, cwServerUrl, cwNamespace, cwPassword, cwAutoRefreshInterval, dispatch]);
+  }, [onRegisterSave, enabled, cwServerUrl, cwNamespace, cwPassword, cwAutoRefreshInterval, notificationsEnabled, soundEnabled, dispatch]);
 
   const handleTestConnection = useCallback(async () => {
     if (!cwServerUrl.trim() || !cwNamespace.trim()) {
@@ -125,6 +131,27 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
               value={String(cwAutoRefreshInterval)}
               onChange={(e) => setCwAutoRefreshInterval(Number(e.target.value) || 30)}
               placeholder="30"
+            />
+          </FormRow>
+          
+          <div style={{ marginTop: "16px", marginBottom: "8px", fontWeight: "bold", fontSize: "14px", color: "rgba(255,255,255,0.8)" }}>
+            通知设置
+          </div>
+          <FormRow>
+            <FormCheckbox
+              id="notifications-enabled"
+              label="允许接收同步通知"
+              checked={notificationsEnabled}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotificationsEnabled(e.target.checked)}
+            />
+          </FormRow>
+          <FormRow>
+            <FormCheckbox
+              id="sound-enabled"
+              label="播放通知提示音 (部分设备可能需要在页面内交互后才能生效)"
+              checked={soundEnabled}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSoundEnabled(e.target.checked)}
+              disabled={!notificationsEnabled}
             />
           </FormRow>
 

@@ -62,6 +62,9 @@ export interface AppSettings {
       namespace: string;
       password?: string;
       autoRefreshIntervalSec: number;
+      notificationsEnabled: boolean;
+      soundEnabled: boolean;
+      soundVolume: number;
     };
   };
 
@@ -166,6 +169,9 @@ const DEFAULT_SETTINGS: AppSettings = {
       namespace: "",
       password: "",
       autoRefreshIntervalSec: 30,
+      notificationsEnabled: true,
+      soundEnabled: false,
+      soundVolume: 0.5,
     },
   },
   study: {
