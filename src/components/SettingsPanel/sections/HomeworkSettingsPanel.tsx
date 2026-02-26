@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useAppDispatch } from "../../../contexts/AppContext";
 import { getAppSettings, updateGeneralSettings } from "../../../utils/appSettings";
-import { FormSection, FormInput, FormRow, FormCheckbox, FormButton } from "../../FormComponents";
+import { FormSection, FormInput, FormRow, FormCheckbox, FormButton, FormSelect } from "../../FormComponents";
 import styles from "../SettingsPanel.module.css";
 import { testHomeworkConnection } from "../../../services/classworksService";
 
@@ -17,6 +17,12 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
   const [cwAutoRefreshInterval, setCwAutoRefreshInterval] = useState(30);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [hitokotoEnabled, setHitokotoEnabled] = useState(true);
+  const [emptySubjectDisplay, setEmptySubjectDisplay] = useState<"card" | "button">("card");
+  const [showQuickTools, setShowQuickTools] = useState(true);
+  const [autoSave, setAutoSave] = useState(true);
+  const [blockNonTodayAutoSave, setBlockNonTodayAutoSave] = useState(true);
+  const [blockPastDataEdit, setBlockPastDataEdit] = useState(false);
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testError, setTestError] = useState("");
 
@@ -32,6 +38,12 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
       setCwAutoRefreshInterval(cw?.autoRefreshIntervalSec ?? 30);
       setNotificationsEnabled(cw?.notificationsEnabled ?? true);
       setSoundEnabled(cw?.soundEnabled ?? false);
+      setHitokotoEnabled(cw?.hitokotoEnabled ?? true);
+      setEmptySubjectDisplay(cw?.emptySubjectDisplay || "card");
+      setShowQuickTools(cw?.showQuickTools ?? true);
+      setAutoSave(cw?.autoSave ?? true);
+      setBlockNonTodayAutoSave(cw?.blockNonTodayAutoSave ?? true);
+      setBlockPastDataEdit(cw?.blockPastDataEdit ?? false);
     } catch {}
   }, []);
 
@@ -46,12 +58,18 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
           autoRefreshIntervalSec: cwAutoRefreshInterval,
           notificationsEnabled,
           soundEnabled,
+          hitokotoEnabled,
+          emptySubjectDisplay,
+          showQuickTools,
+          autoSave,
+          blockNonTodayAutoSave,
+          blockPastDataEdit,
         }
       });
       // Toggle immediately for better UX
       dispatch({ type: "SET_HOMEWORK_ENABLED", payload: enabled });
     });
-  }, [onRegisterSave, enabled, cwServerUrl, cwNamespace, cwPassword, cwAutoRefreshInterval, notificationsEnabled, soundEnabled, dispatch]);
+  }, [onRegisterSave, enabled, cwServerUrl, cwNamespace, cwPassword, cwAutoRefreshInterval, notificationsEnabled, soundEnabled, hitokotoEnabled, emptySubjectDisplay, showQuickTools, autoSave, blockNonTodayAutoSave, blockPastDataEdit, dispatch]);
 
   const handleTestConnection = useCallback(async () => {
     if (!cwServerUrl.trim() || !cwNamespace.trim()) {
@@ -134,6 +152,66 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
             />
           </FormRow>
           
+          <div style={{ marginTop: "16px", marginBottom: "8px", fontWeight: "bold", fontSize: "14px", color: "rgba(255,255,255,0.8)" }}>
+            显示与内容设置
+          </div>
+          <FormRow gap="sm">
+            <FormSelect
+              label="空科目显示方式"
+              value={emptySubjectDisplay}
+              onChange={(e) => setEmptySubjectDisplay(e.target.value as "card" | "button")}
+              options={[
+                { value: "card", label: "卡片" },
+                { value: "button", label: "按钮" }
+              ]}
+            />
+          </FormRow>
+          <FormRow>
+            <FormCheckbox
+              id="hitokoto-enabled"
+              label="展开作业板时上方显示励志语录"
+              checked={hitokotoEnabled}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHitokotoEnabled(e.target.checked)}
+            />
+          </FormRow>
+
+          <div style={{ marginTop: "16px", marginBottom: "8px", fontWeight: "bold", fontSize: "14px", color: "rgba(255,255,255,0.8)" }}>
+            编辑设置
+          </div>
+          <FormRow>
+            <FormCheckbox
+              id="show-quick-tools"
+              label="作业编辑时显示快捷按键 (仅 PC/平板)"
+              checked={showQuickTools}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setShowQuickTools(e.target.checked)}
+            />
+          </FormRow>
+          <FormRow>
+            <FormCheckbox
+              id="auto-save"
+              label="开启自动上传"
+              checked={autoSave}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAutoSave(e.target.checked)}
+            />
+          </FormRow>
+          <FormRow>
+            <FormCheckbox
+              id="block-non-today-autosave"
+              label="禁止自动上传非当天数据 (防止意外覆盖历史数据)"
+              checked={blockNonTodayAutoSave}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBlockNonTodayAutoSave(e.target.checked)}
+              disabled={!autoSave}
+            />
+          </FormRow>
+          <FormRow>
+            <FormCheckbox
+              id="block-past-data-edit"
+              label="禁止编辑过往数据"
+              checked={blockPastDataEdit}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBlockPastDataEdit(e.target.checked)}
+            />
+          </FormRow>
+
           <div style={{ marginTop: "16px", marginBottom: "8px", fontWeight: "bold", fontSize: "14px", color: "rgba(255,255,255,0.8)" }}>
             通知设置
           </div>

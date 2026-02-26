@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { X, RefreshCw } from "lucide-react";
+import { X, RefreshCw, Expand } from "lucide-react";
 
 import { useAppState } from "../../contexts/AppContext";
-import { fetchHomeworkData } from "../../services/classworksService";
+import { fetchHomeworkData, updateHomeworkItem, getTodayDateString } from "../../services/classworksService";
 import type { HomeworkItem } from "../../types/classworks";
 import { getAppSettings } from "../../utils/appSettings";
 
 import styles from "./HomeworkBoard.module.css";
+import { ExpandedHomeworkBoard } from "./ExpandedHomeworkBoard";
 
 interface HomeworkBoardProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -32,6 +34,15 @@ export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
       setLoading(false);
     }
   }, []);
+
+  const handleSaveItem = async (key: string, newContent: string) => {
+    const success = await updateHomeworkItem(getTodayDateString(), key, newContent);
+    if (success) {
+      await loadData();
+      return true;
+    }
+    return false;
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -75,6 +86,14 @@ export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
             </div>
           </div>
           <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.iconBtn}
+              onClick={() => setIsExpanded(true)}
+              title="展开作业板"
+            >
+              <Expand size={20} />
+            </button>
             <button
               type="button"
               className={styles.iconBtn}
@@ -122,6 +141,12 @@ export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
             </div>
           )}
         </div>
+      <ExpandedHomeworkBoard 
+        isOpen={isExpanded} 
+        onClose={() => setIsExpanded(false)} 
+        data={data} 
+        onSaveItem={handleSaveItem}
+      />
     </div>
   );
 };

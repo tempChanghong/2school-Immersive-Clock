@@ -65,6 +65,12 @@ export interface AppSettings {
       notificationsEnabled: boolean;
       soundEnabled: boolean;
       soundVolume: number;
+      hitokotoEnabled: boolean;
+      emptySubjectDisplay: "card" | "button";
+      showQuickTools: boolean;
+      autoSave: boolean;
+      blockNonTodayAutoSave: boolean;
+      blockPastDataEdit: boolean;
     };
   };
 
@@ -172,6 +178,12 @@ const DEFAULT_SETTINGS: AppSettings = {
       notificationsEnabled: true,
       soundEnabled: false,
       soundVolume: 0.5,
+      hitokotoEnabled: true,
+      emptySubjectDisplay: "button",
+      showQuickTools: true,
+      autoSave: true,
+      blockNonTodayAutoSave: true,
+      blockPastDataEdit: false,
     },
   },
   study: {
