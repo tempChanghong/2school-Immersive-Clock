@@ -8,6 +8,19 @@ import type { HomeworkItem } from "../../types/classworks";
 import { getAppSettings } from "../../utils/appSettings";
 import styles from "./HomeworkBoard.module.css";
 
+const DEFAULT_SUBJECTS: HomeworkItem[] = [
+  { key: "语文", name: "语文", content: "", order: 0, type: "normal" as const },
+  { key: "数学", name: "数学", content: "", order: 1, type: "normal" as const },
+  { key: "英语", name: "英语", content: "", order: 2, type: "normal" as const },
+  { key: "物理", name: "物理", content: "", order: 3, type: "normal" as const },
+  { key: "化学", name: "化学", content: "", order: 4, type: "normal" as const },
+  { key: "生物", name: "生物", content: "", order: 5, type: "normal" as const },
+  { key: "政治", name: "政治", content: "", order: 6, type: "normal" as const },
+  { key: "历史", name: "历史", content: "", order: 7, type: "normal" as const },
+  { key: "地理", name: "地理", content: "", order: 8, type: "normal" as const },
+  { key: "其他", name: "其他", content: "", order: 9, type: "normal" as const },
+];
+
 interface ExpandedHomeworkBoardProps {
   isOpen: boolean;
   onClose: () => void;
@@ -54,42 +67,55 @@ export const ExpandedHomeworkBoard: React.FC<ExpandedHomeworkBoardProps> = ({ is
         {hitokotoEnabled && <HitokotoCard />}
         
         <div className={styles.expandedGrid}>
-          {data.map(item => {
-            if (item.type === "hitokoto" || item.type === "exam") return null;
+          {(() => {
+            const mergedData = [...data];
+            DEFAULT_SUBJECTS.forEach((ds) => {
+              if (!mergedData.some((item) => item.key === ds.key || item.name === ds.name)) {
+                mergedData.push(ds);
+              }
+            });
+            mergedData.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
 
-            if (item.type === "attendance") {
-              return <AttendanceCard key={item.key} item={item} />;
-            }
+            return mergedData.map(item => {
+              if (item.type === "hitokoto" || item.type === "exam") return null;
 
-            return (
-              <div 
-                key={item.key} 
-                className={styles.card}
-                onClick={() => handleCardClick(item)}
-                style={{ cursor: 'pointer' }}
-                title="点击编辑"
-              >
-                <div className={styles.cardHeader}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h3 className={styles.cardTitle}>{item.name}</h3>
-                    <Edit size={14} className={styles.editIcon} style={{ opacity: 0.5 }} />
+              if (item.type === "attendance") {
+                return <AttendanceCard key={item.key} item={item} />;
+              }
+
+              return (
+                <div 
+                  key={item.key} 
+                  className={styles.card}
+                  onClick={() => handleCardClick(item)}
+                  style={{ cursor: 'pointer' }}
+                  title="点击编辑"
+                >
+                  <div className={styles.cardHeader}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h3 className={styles.cardTitle}>{item.name}</h3>
+                      <Edit size={14} className={styles.editIcon} style={{ opacity: 0.5 }} />
+                    </div>
+                    {item.type && item.type !== "normal" && item.type !== "custom" && (
+                      <span className={styles.cardBadge}>{item.type}</span>
+                    )}
                   </div>
-                  {item.type && item.type !== "normal" && item.type !== "custom" && (
-                    <span className={styles.cardBadge}>{item.type}</span>
-                  )}
+                  <div className={styles.cardBody}>
+                    <ul className={styles.taskList}>
+                      {splitContent(item.content).map((line, idx) => (
+                        <li key={`${item.key}-line-${idx}`} className={styles.taskItem}>
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                    {(!item.content || item.content.trim() === '') && (
+                      <div style={{ opacity: 0.5, fontSize: '0.9rem', fontStyle: 'italic', padding: '8px 0' }}>暂无作业，点击添加</div>
+                    )}
+                  </div>
                 </div>
-                <div className={styles.cardBody}>
-                  <ul className={styles.taskList}>
-                    {splitContent(item.content).map((line, idx) => (
-                      <li key={`${item.key}-line-${idx}`} className={styles.taskItem}>
-                        {line}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
 
           {data.length === 0 && (
             <div className={styles.emptyState} style={{ gridColumn: '1 / -1' }}>

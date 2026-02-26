@@ -3,7 +3,7 @@ import { useAppDispatch } from "../../../contexts/AppContext";
 import { getAppSettings, updateGeneralSettings } from "../../../utils/appSettings";
 import { FormSection, FormInput, FormRow, FormCheckbox, FormButton, FormSelect } from "../../FormComponents";
 import styles from "../SettingsPanel.module.css";
-import { testHomeworkConnection } from "../../../services/classworksService";
+import { testHomeworkConnection, fetchRawClassworksData } from "../../../services/classworksService";
 
 export interface HomeworkSettingsPanelProps {
   onRegisterSave?: (fn: () => void) => void;
@@ -25,6 +25,7 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
   const [blockPastDataEdit, setBlockPastDataEdit] = useState(false);
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testError, setTestError] = useState("");
+  const [debugRawData, setDebugRawData] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
 
@@ -286,7 +287,65 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
               >
                 测试紧急通知
               </FormButton>
+              <FormButton 
+                variant="secondary" 
+                onClick={async () => {
+                  setDebugRawData("加载中...");
+                  try {
+                    const headers = cwPassword.trim() ? { "x-site-key": cwPassword.trim(), "x-app-token": cwPassword.trim(), "Accept": "application/json" } : { "Accept": "application/json" };
+                    // 尝试列出命名空间中的所有键
+                    let urlStr = `${cwServerUrl.trim().replace(/\/$/, "")}/kv/_keys?limit=100`;
+                    const res = await fetch(urlStr, { headers });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setDebugRawData("此命名空间下的所有键名:\n" + JSON.stringify(data, null, 2));
+                    } else {
+                      // 尝试备用代理路径
+                      urlStr = `${cwServerUrl.trim().replace(/\/$/, "")}/kv/_info`;
+                      const res2 = await fetch(urlStr, { headers });
+                      if (res2.ok) {
+                         const data2 = await res2.json();
+                         setDebugRawData("API基础信息(无/_keys支持):\n" + JSON.stringify(data2, null, 2));
+                      } else {
+                         setDebugRawData(`无法列出键名: ${res.status}, ${res2.status}`);
+                      }
+                    }
+                  } catch (e: any) {
+                    setDebugRawData("拉取失败: " + e.message);
+                  }
+                }}
+              >
+                列出命名空间下的所有键名
+              </FormButton>
+
+              <FormButton 
+                variant="secondary" 
+                onClick={async () => {
+                  setDebugRawData("加载中...");
+                  try {
+                    const headers = cwPassword.trim() ? { "x-site-key": cwPassword.trim(), "x-app-token": cwPassword.trim(), "Accept": "application/json" } : { "Accept": "application/json" };
+                    const legacyKey = "classworks-config-homework-today";
+                    const legacyUrl = `${cwServerUrl.trim().replace(/\/$/, "")}/kv/${legacyKey}`;
+                    const res = await fetch(legacyUrl, { headers });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setDebugRawData(`旧版数据 (${legacyKey}):\n` + JSON.stringify(data, null, 2));
+                    } else {
+                      setDebugRawData(`旧版数据 (${legacyKey}) 也是 ${res.status} 未找到`);
+                    }
+                  } catch (e: any) {
+                    setDebugRawData("拉取失败: " + e.message);
+                  }
+                }}
+              >
+                拉取旧版历史数据
+              </FormButton>
             </FormRow>
+            {debugRawData && (
+              <div style={{ marginTop: "12px", padding: "8px", background: "rgba(0,0,0,0.3)", borderRadius: "4px", fontSize: "12px", fontFamily: "monospace", whiteSpace: "pre-wrap", maxHeight: "300px", overflowY: "auto" }}>
+                {debugRawData}
+              </div>
+            )}
           </div>
         </div>
       </FormSection>

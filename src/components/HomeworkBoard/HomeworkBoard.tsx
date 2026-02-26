@@ -74,7 +74,7 @@ export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
     >
       <div className={styles.header}>
           <div className={styles.titleArea}>
-            <h2 className={styles.title}>作业板 (Homework)</h2>
+            <h2 className={styles.title}>作业板</h2>
             <div className={styles.statusInfo}>
               {loading ? (
                 <span className={styles.loadingText}>更新中...</span>
@@ -112,14 +112,14 @@ export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
               <p>无法获取作业数据</p>
               <span className={styles.errorMsg}>{error}</span>
             </div>
-          ) : data.length === 0 && !loading ? (
+          ) : data.filter((item) => (item.type && item.type !== "normal" && item.type !== "custom") || (item.content && item.content.trim().length > 0)).length === 0 && !loading ? (
             <div className={styles.emptyState}>
               <p>今天没有作业记录哦~</p>
               <span className={styles.emptyHint}>可能是放假，或者后端暂未配置</span>
             </div>
           ) : (
             <div className={styles.masonryGrid}>
-              {data.map((item) => (
+              {data.filter((item) => (item.type && item.type !== "normal" && item.type !== "custom") || (item.content && item.content.trim().length > 0)).map((item) => (
                 <div key={item.key} className={styles.card}>
                   <div className={styles.cardHeader}>
                     <h3 className={styles.cardTitle}>{item.name}</h3>
