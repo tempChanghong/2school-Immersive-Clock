@@ -1120,6 +1120,11 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
 
         {bgType === "image" && (
           <>
+            <p className={styles.helpText} style={{ color: "#ffb74d" }}>
+              💡 提示：设置或更换图片后，请
+              <strong style={{ margin: "0 4px", color: "#ffa726" }}>手动刷新网页</strong>
+              以完美应用更改。
+            </p>
             <FormRow gap="sm">
               <FormFilePicker
                 label="背景图片"
@@ -1131,7 +1136,37 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
                   if (!file) return;
                   setBgImageFileName(file.name);
                   const reader = new FileReader();
-                  reader.onload = () => setBgImage(reader.result as string);
+                  reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                      const canvas = document.createElement("canvas");
+                      let width = img.width;
+                      let height = img.height;
+                      const maxSize = 2560; // 适当限制以防极端分辨率
+                      if (width > height && width > maxSize) {
+                        height = Math.round((height * maxSize) / width);
+                        width = maxSize;
+                      } else if (height > maxSize) {
+                        width = Math.round((width * maxSize) / height);
+                        height = maxSize;
+                      }
+                      canvas.width = width;
+                      canvas.height = height;
+                      const ctx = canvas.getContext("2d");
+                      if (ctx) {
+                        ctx.fillStyle = "#121212";
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(img, 0, 0, width, height);
+                        // 强制输出 JPEG 格式加上 0.7 压缩避免 base64 超出 LocalStorage 容量 (5M)
+                        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75); 
+                        setBgImage(compressedDataUrl);
+                      } else {
+                        // Fallback
+                        setBgImage(reader.result as string);
+                      }
+                    };
+                    img.src = e.target?.result as string;
+                  };
                   reader.readAsDataURL(file);
                 }}
               />

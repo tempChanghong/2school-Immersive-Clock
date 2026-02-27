@@ -18,42 +18,9 @@ import NoiseMonitor from "../NoiseMonitor";
 import NoiseReportModal, { NoiseReportPeriod } from "../NoiseReportModal/NoiseReportModal";
 import StudyStatus from "../StudyStatus";
 
+import { hexToRgba } from "../../utils/colorUtils";
+
 import styles from "./Study.module.css";
-
-// 颜色工具：#rrggbb/#rgb 转 rgba(r,g,b,a)
-function hexToRgba(hex: string, alpha: number = 1): string {
-  if (!hex) return hex;
-  const h = hex.trim();
-  const clampA = Math.max(0, Math.min(1, alpha));
-  const short = /^#([A-Fa-f0-9]{3})$/;
-  const long = /^#([A-Fa-f0-9]{6})$/;
-  if (short.test(h)) {
-    const m = h.match(short)!;
-    const r = parseInt(m[1][0] + m[1][0], 16);
-    const g = parseInt(m[1][1] + m[1][1], 16);
-    const b = parseInt(m[1][2] + m[1][2], 16);
-    return `rgba(${r}, ${g}, ${b}, ${clampA})`;
-  }
-  if (long.test(h)) {
-    const m = h.match(long)!;
-    const r = parseInt(m[1].slice(0, 2), 16);
-    const g = parseInt(m[1].slice(2, 4), 16);
-    const b = parseInt(m[1].slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${clampA})`;
-  }
-  // 对 rgb(...) 直接加透明度
-  const rgb = /^rgb\s*\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/;
-  const rm = h.match(rgb);
-  if (rm) {
-    const r = Math.max(0, Math.min(255, parseInt(rm[1], 10)));
-    const g = Math.max(0, Math.min(255, parseInt(rm[2], 10)));
-    const b = Math.max(0, Math.min(255, parseInt(rm[3], 10)));
-    return `rgba(${r}, ${g}, ${b}, ${clampA})`;
-  }
-  // 若已是 rgba(...) 或其他格式，则原样返回
-  return h;
-}
-
 /**
  * 自习组件
  * 显示当前时间和倒计时轮播
@@ -386,30 +353,13 @@ export function Study() {
     return () => clearInterval(timer);
   }, [countdownItems.length, study.carouselIntervalSec]);
 
-  // 背景样式
-  const backgroundStyle: React.CSSProperties = (() => {
-    const style: React.CSSProperties = {};
-    if (backgroundSettings?.type === "image" && backgroundSettings.imageDataUrl) {
-      style.backgroundImage = `url(${backgroundSettings.imageDataUrl})`;
-      style.backgroundSize = "cover";
-      style.backgroundPosition = "center";
-      style.backgroundRepeat = "no-repeat";
-    } else if (backgroundSettings?.type === "color" && backgroundSettings.color) {
-      style.backgroundImage = "none";
-      const a =
-        typeof backgroundSettings.colorAlpha === "number" ? backgroundSettings.colorAlpha : 1;
-      style.backgroundColor = hexToRgba(backgroundSettings.color, a);
-    }
-    return style;
-  })();
-
-  /** 构造容器样式（函数级注释：合并背景样式并按自习设置覆盖 CSS 字体变量，确保数字与文本分别使用对应的字体家族） */
+  // 背景样式移动到全局 ClockPage 中处理，为了自习模式卡片保留变量注入
   type ContainerStyle = React.CSSProperties & {
     ["--font-main"]?: string;
     ["--font-ui"]?: string;
   };
   const containerStyle: ContainerStyle = (() => {
-    const style: ContainerStyle = { ...(backgroundStyle as React.CSSProperties) };
+    const style: ContainerStyle = {};
     if (study.numericFontFamily && study.numericFontFamily.trim().length > 0) {
       style["--font-main"] = study.numericFontFamily;
     }

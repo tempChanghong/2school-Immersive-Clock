@@ -292,7 +292,7 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
                 onClick={async () => {
                   setDebugRawData("加载中...");
                   try {
-                    const headers = cwPassword.trim() ? { "x-site-key": cwPassword.trim(), "x-app-token": cwPassword.trim(), "Accept": "application/json" } : { "Accept": "application/json" };
+                    const headers: Record<string, string> = cwPassword.trim() ? { "x-site-key": cwPassword.trim(), "x-app-token": cwPassword.trim(), "Accept": "application/json" } : { "Accept": "application/json" };
                     // 尝试列出命名空间中的所有键
                     let urlStr = `${cwServerUrl.trim().replace(/\/$/, "")}/kv/_keys?limit=100`;
                     const res = await fetch(urlStr, { headers });
@@ -323,7 +323,7 @@ export const HomeworkSettingsPanel: React.FC<HomeworkSettingsPanelProps> = ({ on
                 onClick={async () => {
                   setDebugRawData("加载中...");
                   try {
-                    const headers = cwPassword.trim() ? { "x-site-key": cwPassword.trim(), "x-app-token": cwPassword.trim(), "Accept": "application/json" } : { "Accept": "application/json" };
+                    const headers: Record<string, string> = cwPassword.trim() ? { "x-site-key": cwPassword.trim(), "x-app-token": cwPassword.trim(), "Accept": "application/json" } : { "Accept": "application/json" };
                     const legacyKey = "classworks-config-homework-today";
                     const legacyUrl = `${cwServerUrl.trim().replace(/\/$/, "")}/kv/${legacyKey}`;
                     const res = await fetch(legacyUrl, { headers });

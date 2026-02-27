@@ -6,6 +6,7 @@
   height: 100%;
   position: relative;
   color: var(--text-color);
+  background-color: transparent; /* 允许外部时钟页背景穿透 */
   /* 使用 Flex 使主区域内容自然排布 */
   display: flex;
   flex-direction: column;

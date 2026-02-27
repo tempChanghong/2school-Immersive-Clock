@@ -18,6 +18,8 @@ import { useAppState, useAppDispatch } from "../../contexts/AppContext";
 import { useClassworksSocket } from "../../hooks/useClassworksSocket";
 import schoolLogo from "../../icons/school.png";
 import type { MessagePopupOpenDetail, MessagePopupType } from "../../types/messagePopup";
+import { hexToRgba } from "../../utils/colorUtils";
+import { readStudyBackground } from "../../utils/studyBackgroundStorage";
 import { startTimeSyncManager } from "../../utils/timeSync";
 import { startTour, isTourActive } from "../../utils/tour";
 
@@ -49,10 +51,17 @@ export function ClockPage() {
     }>
   >([]);
 
+  const [backgroundSettings, setBackgroundSettings] = useState(() => readStudyBackground());
+
   // Initialize Classworks Socket connection map to app state
   useClassworksSocket();
 
-  // 跟踪模式变化
+  // 监听背景变动
+  useEffect(() => {
+    if (mode === "study") {
+      setBackgroundSettings(readStudyBackground());
+    }
+  }, [mode]);
   useEffect(() => {
     if (prevModeRef.current !== "study" && mode === "study") {
       const ev = new CustomEvent("weatherMinutelyPrecipRefresh", {
@@ -308,6 +317,26 @@ export function ClockPage() {
     );
   }, [mode, globalPopups.length]);
 
+  // 计算全局背景样式（如果当前模式是自习或者强制全局覆盖）
+  const backgroundStyle: React.CSSProperties = (() => {
+    const style: React.CSSProperties = {};
+    // 只有自习模式有背景配置功能（目前），如果需要的话可以配置其他模式兼容
+    if (mode === "study" && backgroundSettings) {
+      if (backgroundSettings.type === "image" && backgroundSettings.imageDataUrl) {
+        style.backgroundImage = `url(${backgroundSettings.imageDataUrl})`;
+        style.backgroundSize = "cover";
+        style.backgroundPosition = "center";
+        style.backgroundRepeat = "no-repeat";
+        style.backgroundColor = "transparent";
+      } else if (backgroundSettings.type === "color" && backgroundSettings.color) {
+        style.backgroundImage = "none";
+        const a = typeof backgroundSettings.colorAlpha === "number" ? backgroundSettings.colorAlpha : 1;
+        style.backgroundColor = hexToRgba(backgroundSettings.color, a);
+      }
+    }
+    return style;
+  })();
+
   return (
     <main
       className={styles.clockPage}
@@ -315,8 +344,11 @@ export function ClockPage() {
       onKeyDown={handleKeyDown}
       tabIndex={0}
       aria-label="时钟应用主界面"
-      /* style={{ flexDirection: "row" }} 已被 CSS module 替代 */
-      style={!isHomeworkEnabled ? ({ "--sidebar-width": "0px" } as React.CSSProperties) : undefined}
+      /* 合并 sidebar-width 和 backgroundStyle */
+      style={{
+        ...backgroundStyle,
+        ...(!isHomeworkEnabled ? ({ "--sidebar-width": "0px" } as React.CSSProperties) : {}),
+      }}
     >
       {/* 1. 顶部 Header 区 (Logo + HUD) */}
       <header className={styles.header}>

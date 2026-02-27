@@ -108,7 +108,7 @@
   transition: all var(--transition-normal);
 }
 
-/* 背景渐变以提升视觉效果 */
+/* 背景渐变以提升视觉效果 (如果用户开启图片背景可以叠加一层暗角以保证可读性) */
 .clockPage::before {
   content: "";
   position: absolute;
@@ -121,7 +121,7 @@
     rgba(255, 255, 255, 0.02) 0%,
     rgba(255, 255, 255, 0.01) 50%,
     transparent 100%
-  );
+  ), rgba(0, 0, 0, 0.15); /* 加一层微微的暗底衬 */
   pointer-events: none;
   z-index: 0;
 }
