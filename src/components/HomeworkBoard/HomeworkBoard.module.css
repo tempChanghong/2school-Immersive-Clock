@@ -2,12 +2,12 @@
 .boardContainer {
   width: 340px; /* 合适的侧边栏宽度 */
   margin: 24px 24px 24px 0; /* 上、右、下 24px，左 0（通过左边元素的 gap 控制） */
-  border-radius: 24px;      /* 圆角边框 */
-  background: rgba(30, 30, 35, 0.4);
-  backdrop-filter: blur(24px); /* 更强的毛玻璃模糊 */
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.15); /* 更清晰的边框以便凸显卡片 */
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.05); /* 浮层的高级阴影 */
+  border-radius: 16px;      /* 调整为匹配卡片的圆角边框 */
+  background: rgba(255, 255, 255, 0.08); /* 适配新卡片底板样式 */
+  backdrop-filter: blur(12px); /* 适配新卡片磨砂程度 */
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15); /* 微亮边框 */
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1); /* 适配新卡片阴影 */
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -122,13 +122,13 @@
   border-radius: 12px;
   overflow: hidden;
   break-inside: avoid;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .cardHeader {
@@ -286,7 +286,8 @@
 
 .hitokotoCard:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .hitokotoContent {

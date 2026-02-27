@@ -1,12 +1,19 @@
 /* 时钟页面组件样式 */
 
 .clockPage {
+  --hud-height: 80px; /* 定义HUD状态栏的安全高度，供各组件引用 */
   height: 100vh;
   width: 100vw;
   background: var(--background-color);
   color: var(--text-color);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: var(--sidebar-width, 320px) 1fr var(--sidebar-width, 320px);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header header header"
+    "left-sidebar main-center right-sidebar";
+  gap: 16px;
+  padding: 16px;
   position: relative;
   overflow: hidden;
   cursor: default;
@@ -25,12 +32,46 @@
   outline: none;
 }
 
+.header {
+  grid-area: header;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  height: var(--hud-height);
+  z-index: 100;
+  pointer-events: none; /* 让中间透传点击，内部元素(Logo/HUD)需自身恢复 pointer-events: auto */
+}
+
+.leftSidebar {
+  grid-area: left-sidebar;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  pointer-events: none; /* 穿透空白点击 */
+  transition: width 0.3s ease, opacity 0.3s ease;
+}
+
+.leftSidebar > * {
+  pointer-events: auto;
+}
+
+.rightSidebar {
+  grid-area: right-sidebar;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.rightSidebar > * {
+  pointer-events: auto;
+}
+
 .timeDisplay {
-  flex: 1;
+  grid-area: main-center;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-lg);
   position: relative;
   z-index: 1;
 }
@@ -63,7 +104,7 @@
 /* 文本选择禁用已在上方 .clockPage 主规则中处理 */
 
 /* 模式切换的平滑过渡 */
-.timeDisplay {
+.timeDisplay, .leftSidebar, .rightSidebar {
   transition: all var(--transition-normal);
 }
 
@@ -165,16 +206,12 @@
   }
 }
 
-/* 学校 Logo 样式 */
+/* 学校 Logo 样式 - 放入横向 Header 控制 */
 .schoolLogoContainer {
-  position: absolute;
-  top: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  pointer-events: none;
+  pointer-events: auto;
   display: flex;
   align-items: center;
+  margin-left: 1rem;
 }
 
 .schoolLogo {
@@ -197,26 +234,16 @@
 }
 
 @media (max-width: 1024px) {
+  .clockPage {
+    grid-template-columns: 260px 1fr 260px;
+    padding: 12px;
+    gap: 12px;
+  }
   .schoolLogoContainer {
-    top: 1.25rem;
-    left: 1.25rem;
+    margin-left: 0.5rem;
   }
   .schoolLogo {
-    height: 52px;
-    margin-right: 14px;
-  }
-  .schoolName {
-    font-size: 1.25rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .schoolLogoContainer {
-    top: 1.25rem;
-    left: 1.25rem;
-  }
-  .schoolLogo {
-    height: 48px;
+    height: 38px;
     margin-right: 12px;
   }
   .schoolName {
@@ -224,14 +251,32 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .clockPage {
+    /* 窄屏改为单列，侧栏退行/折叠 */
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas:
+      "header"
+      "main-center"
+      "left-sidebar"
+      "right-sidebar";
+    padding: 8px;
+    gap: 8px;
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .leftSidebar, .rightSidebar {
+    pointer-events: auto; /* 窄屏时恢复点击，因为不再是在两侧飘浮 */
+  }
+
   .schoolLogoContainer {
-    top: 1rem;
-    left: 1rem;
+    margin-left: 0;
   }
   .schoolLogo {
-    height: 40px;
-    margin-right: 10px;
+    height: 32px;
+    margin-right: 8px;
   }
   .schoolName {
     font-size: 1rem;
@@ -239,13 +284,13 @@
 }
 
 @media (max-height: 600px) {
-  .schoolLogoContainer {
-    top: 1rem;
-    left: 1rem;
+  .clockPage {
+    padding: 8px;
+    gap: 8px;
   }
   .schoolLogo {
-    height: 40px;
-    margin-right: 10px;
+    height: 32px;
+    margin-right: 8px;
   }
   .schoolName {
     font-size: 1rem;

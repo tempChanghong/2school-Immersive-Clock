@@ -46,6 +46,7 @@ function loadStudyState(): StudyState {
     carouselIntervalSec: study.carouselIntervalSec,
     digitColor: study.style.digitColor,
     digitOpacity: study.style.digitOpacity,
+    cardStyleEnabled: study.style.cardStyleEnabled,
     numericFontFamily: study.style.numericFontFamily,
     textFontFamily: study.style.textFontFamily,
     timeColor: study.style.timeColor,
@@ -437,6 +438,25 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         study: dateColorUpdatedStudy,
+      };
+
+    case "SET_STUDY_CARD_STYLE":
+      const cardStyleUpdatedStudy = {
+        ...state.study,
+        cardStyleEnabled: action.payload,
+      };
+      updateAppSettings((current) => ({
+        study: {
+          ...current.study,
+          style: {
+            ...current.study.style,
+            cardStyleEnabled: action.payload,
+          },
+        },
+      }));
+      return {
+        ...state,
+        study: cardStyleUpdatedStudy,
       };
 
     case "SET_WEATHER_ALERT_ENABLED":

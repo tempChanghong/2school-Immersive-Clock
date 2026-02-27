@@ -8,7 +8,6 @@ import { pushErrorCenterRecord } from "../../utils/errorCenter";
 import styles from "./NoiseMonitor.module.css";
 
 interface NoiseMonitorProps {
-  onBreathingLightClick?: () => void;
   onStatusClick?: () => void;
 }
 
@@ -17,7 +16,7 @@ const MIN_ALERT_INTERVAL = 200;
 /** 报警音最大间隔（噪音刚过阈值时，2000ms） */
 const MAX_ALERT_INTERVAL = 2000;
 
-const NoiseMonitor: React.FC<NoiseMonitorProps> = ({ onBreathingLightClick, onStatusClick }) => {
+const NoiseMonitor: React.FC<NoiseMonitorProps> = ({ onStatusClick }) => {
   const { status, realtimeDisplayDb, maxLevelDb, showRealtimeDb, alertSoundEnabled, retry } =
     useNoiseStream();
   const { study } = useAppState();
@@ -135,20 +134,9 @@ const NoiseMonitor: React.FC<NoiseMonitorProps> = ({ onBreathingLightClick, onSt
   }, [status]);
 
   /**
-   * 处理呼吸灯点击（函数级注释：呼吸灯用于进入历史记录管理界面，不受噪音状态影响）
+   * 处理卡片整体点击（错误/无权限时点击重试，正常状态下触发状态点击回调）
    */
-  const handleBreathingLightClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onBreathingLightClick?.();
-    },
-    [onBreathingLightClick]
-  );
-
-  /**
-   * 处理状态文字点击（函数级注释：错误/无权限时点击重试，正常状态下触发状态点击回调）
-   */
-  const handleStatusTextClick = useCallback(
+  const handleContainerClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       if (status === "permission-denied" || status === "error") {
@@ -179,20 +167,15 @@ const NoiseMonitor: React.FC<NoiseMonitorProps> = ({ onBreathingLightClick, onSt
   }, [status, realtimeDisplayDb, maxLevelDb]);
 
   return (
-    <div className={styles.noiseMonitor} data-tour="noise-monitor">
+    <div className={styles.noiseMonitor} data-tour="noise-monitor" onClick={handleContainerClick}>
       <div className={styles.statusContainer}>
         <div
           className={`${styles.breathingLight} ${statusClassName}`}
-          onClick={handleBreathingLightClick}
           title={breathingLightTooltip}
           data-tour="noise-history-trigger"
         ></div>
         <div className={styles.textBlock}>
-          <div
-            className={`${styles.statusText} ${statusClassName}`}
-            onClick={handleStatusTextClick}
-            title={statusTextTooltip}
-          >
+          <div className={`${styles.statusText} ${statusClassName}`} title={statusTextTooltip}>
             {statusText}
           </div>
           {showRealtimeDb && (status === "quiet" || status === "noisy") && (

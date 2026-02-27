@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 
 import { useAppState } from "../../contexts/AppContext";
 import { useTimer } from "../../hooks/useTimer";
@@ -63,6 +64,7 @@ export function Study() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportPeriod, setReportPeriod] = useState<NoiseReportPeriod | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [sidebarSlot, setSidebarSlot] = useState<HTMLElement | null>(null);
   // [新增] 记录报告是否从历史记录界面打开
   const [reportFromHistory, setReportFromHistory] = useState(false);
   // 记录当前课时是否已弹出过报告，以及是否被手动关闭以避免重复弹出
@@ -76,7 +78,6 @@ export function Study() {
 
   // 轮播：容器与尺寸测量
   const countdownRef = useRef<HTMLDivElement | null>(null);
-  const [countdownWidth, setCountdownWidth] = useState<number>(0);
   const [itemHeight, setItemHeight] = useState<number>(0);
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
@@ -85,6 +86,11 @@ export function Study() {
    */
   const updateTime = useCallback(() => {
     setCurrentTime(getAdjustedDate());
+  }, []);
+
+  // 挂载时获取 Slot DOM 节点，供右侧面板 Portal 渲染
+  useEffect(() => {
+    setSidebarSlot(document.getElementById("right-sidebar-slot"));
   }, []);
 
   // 使用计时器每秒更新时间
@@ -359,11 +365,9 @@ export function Study() {
     const measure = () => {
       const el = countdownRef.current;
       if (!el) {
-        setCountdownWidth(0);
         setItemHeight(0);
         return;
       }
-      setCountdownWidth(el.offsetWidth);
       setItemHeight(el.clientHeight);
     };
     measure();
@@ -510,25 +514,13 @@ export function Study() {
     );
   };
 
-  return (
-    <div className={styles.container} style={containerStyle}>
-      {/* 状态栏直接在容器中绝对定位（以便完全居中于左半区可用空间） */}
-      {display.showStatusBar && <StudyStatus />}
-
-      {/* 左上角：噪音监测（独立占用 topLeft 容器） */}
-      {display.showNoiseMonitor && (
-        <div className={styles.topLeft}>
-          <NoiseMonitor
-            onBreathingLightClick={handleOpenHistory}
-            onStatusClick={handleOpenHistory}
-          />
-        </div>
-      )}
-
-      {/* 右上角：倒计时与励志语录（分别可隐藏） */}
-      {(display.showCountdown || display.showQuote) && (
-        <div className={styles.topRight}>
-          {display.showCountdown && (
+  const renderRightSidebarContent = () => {
+    return (
+      <div className={styles.widgetsColumn}>
+        {display.showCountdown && (
+          <div
+            className={`${styles.widgetBox} ${study.cardStyleEnabled !== false ? styles.moduleCard : ""}`}
+          >
             <div className={styles.countdownCarousel} ref={countdownRef} aria-live="polite">
               <div
                 className={styles.carouselTrack}
@@ -537,17 +529,39 @@ export function Study() {
                 {countdownItems.map(renderItem)}
               </div>
             </div>
-          )}
-          {display.showQuote && (
-            <div
-              className={styles.quoteSection}
-              style={{ width: display.showCountdown ? countdownWidth || undefined : undefined }}
-            >
-              <MotivationalQuote />
-            </div>
-          )}
+          </div>
+        )}
+
+        {display.showNoiseMonitor && (
+          <div
+            className={`${styles.widgetBox} ${study.cardStyleEnabled !== false ? styles.moduleCard : ""}`}
+          >
+            <NoiseMonitor onStatusClick={handleOpenHistory} />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className={styles.container} style={containerStyle}>
+      {/* 状态栏直接在容器中流动，由 flex 控制即可（需 CSS Module 中配置） */}
+      {display.showStatusBar && <StudyStatus />}
+
+      {/* 励志语录直接流式布局，放置在中心或合适位置 */}
+      {display.showQuote && (
+        <div className={styles.centerQuote}>
+          <div className={styles.quoteSection}>
+            <MotivationalQuote />
+          </div>
         </div>
       )}
+
+      {/* 如果获取到了 right-sidebar-slot，使用 Portal 注入右侧栏组件 */}
+      {sidebarSlot && ReactDOM.createPortal(renderRightSidebarContent(), sidebarSlot)}
+
+      {/* 当无法获取 Portal 锚点时的降级渲染 (针对纯色背景单独打开时的 fallback) */}
+      {!sidebarSlot && <div className={styles.topBar}>{renderRightSidebarContent()}</div>}
 
       {/* 居中：时间始终显示，日期可隐藏 */}
       <div className={styles.centerTime}>

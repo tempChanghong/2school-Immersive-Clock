@@ -1,32 +1,43 @@
-/* 实时噪音状态监测组件样式 */
 .noiseMonitor {
   margin-top: 0.75rem;
   text-align: left;
+  width: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  border-radius: var(--border-radius-sm);
+  transition: background-color 0.2s;
+}
+
+.noiseMonitor:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .statusContainer {
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  width: 100%;
 }
 
 .textBlock {
   display: flex;
   flex-direction: column;
-  gap: 0rem;
+  gap: 0.25rem; /* 增加文字和分贝之间的垂直间距 */
+  justify-content: center;
 }
 
 .statusText {
   font-family: var(--font-ui);
   font-size: 1.4rem;
-  line-height: 1.5;
+  line-height: 1.2;
   font-weight: 500;
   letter-spacing: 0.5px;
   transition: all 0.3s ease;
   user-select: none;
   display: inline-block;
-  padding: 0.4rem 0.7rem;
-  border-radius: var(--border-radius-sm);
+  padding: 0;
 }
 
 .statusSubtext {
@@ -34,9 +45,8 @@
   font-size: 0.9rem;
   line-height: 1.1;
   color: rgba(255, 255, 255, 0.75);
-  padding: 0 0.7rem;
+  padding: 0; /* 对齐左边缘，移除原本的左右偏移 */
   margin-top: 0;
-  /* 紧贴状态文本 */
 }
 
 /* 安静状态 */
@@ -239,13 +249,6 @@
 
   .statusText {
     font-size: 1.3rem;
-    padding: 0.7rem 0.9rem;
-    /* 增加点击区域 */
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    /* 确保显示可点击状态 */
   }
 
   .breathingLight {
@@ -272,12 +275,6 @@
 
   .statusText {
     font-size: 1.2rem;
-    padding: 0.9rem 1.2rem;
-    /* 更大的点击区域 */
-    min-height: 44px;
-    border-radius: 8px;
-    /* 移除移动端背景，保持与桌面端一致 */
-    cursor: pointer;
   }
 
   .breathingLight {
@@ -306,8 +303,6 @@
 
   .statusText {
     font-size: 1.4rem;
-    padding: 0.8rem 1rem;
-    min-height: 42px;
     font-weight: 500;
   }
 
@@ -320,8 +315,6 @@
 @media (orientation: portrait) and (max-width: 480px) {
   .statusText {
     font-size: 1.3rem;
-    padding: 0.9rem 1.1rem;
-    min-height: 46px;
   }
 
   .breathingLight {

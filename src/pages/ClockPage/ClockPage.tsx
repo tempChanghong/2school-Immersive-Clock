@@ -315,21 +315,14 @@ export function ClockPage() {
       onKeyDown={handleKeyDown}
       tabIndex={0}
       aria-label="时钟应用主界面"
-      style={{ flexDirection: "row" }}
+      /* style={{ flexDirection: "row" }} 已被 CSS module 替代 */
+      style={!isHomeworkEnabled ? ({ "--sidebar-width": "0px" } as React.CSSProperties) : undefined}
     >
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", height: "100%", overflow: "hidden" }}>
+      {/* 1. 顶部 Header 区 (Logo + HUD) */}
+      <header className={styles.header}>
         <div className={styles.schoolLogoContainer}>
           <img src={schoolLogo} alt="School Logo" className={styles.schoolLogo} />
           <span className={styles.schoolName}>天津市第二中学</span>
-        </div>
-
-        <div
-          className={styles.timeDisplay}
-          id={`${mode}-panel`}
-          role="tabpanel"
-          data-tour="clock-area"
-        >
-          {renderTimeDisplay()}
         </div>
 
         <div
@@ -350,9 +343,25 @@ export function ClockPage() {
             dispatch({ type: "SHOW_HUD" });
             clearHudHideTimeout();
           }}
+          style={{ pointerEvents: "auto" }}
         >
           <HUD />
         </div>
+      </header>
+
+      {/* 2. 左侧栏 (Homework Board) */}
+      <aside className={styles.leftSidebar}>
+        <HomeworkBoard isOpen={isHomeworkEnabled} />
+      </aside>
+
+      {/* 3. 中心主内容区 (Time Display & Controls) */}
+      <div
+        className={styles.timeDisplay}
+        id={`${mode}-panel`}
+        role="tabpanel"
+        data-tour="clock-area"
+      >
+        {renderTimeDisplay()}
 
         <AuthorInfo onVersionClick={handleVersionClick} />
 
@@ -376,9 +385,10 @@ export function ClockPage() {
         )}
       </div>
 
-      <HomeworkBoard
-        isOpen={isHomeworkEnabled}
-      />
+      {/* 4. 右侧栏 Placeholder (给 NoiseMonitor 和 Countdown 等小组件使用 Portal 挂载) */}
+      <aside className={styles.rightSidebar} id="right-sidebar-slot">
+        {/* Study 组件中的内容将通过 Portal 挂载到这里 */}
+      </aside>
 
       {/* 设置按钮 - 只在自习模式下显示 */}
       {mode === "study" && (

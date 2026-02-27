@@ -89,6 +89,7 @@ export interface AppSettings {
       textFontFamily?: string;
       timeColor?: string;
       dateColor?: string;
+      cardStyleEnabled?: boolean;
     };
     alerts: {
       weatherAlert: boolean;
@@ -202,6 +203,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     countdownItems: [],
     style: {
       digitOpacity: 1,
+      cardStyleEnabled: true,
     },
     alerts: {
       weatherAlert: false,

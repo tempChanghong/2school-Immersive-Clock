@@ -98,6 +98,10 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     ...(study.display || defaultDisplay),
   });
 
+  const [draftCardStyleEnabled, setDraftCardStyleEnabled] = useState<boolean>(
+    study.cardStyleEnabled ?? true
+  );
+
   // 背景设置草稿
   const [bgType, setBgType] = useState<"default" | "color" | "image">("default");
   const [bgColor, setBgColor] = useState<string>("#121212");
@@ -231,6 +235,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     setDraftCustomName(study.customName ?? "");
     setDraftCustomDate(study.customDate ?? "");
     setDraftDisplay({ ...(study.display || defaultDisplay), showTime: true });
+    setDraftCardStyleEnabled(study.cardStyleEnabled ?? true);
     // 背景设置
     const bg = readStudyBackground();
     setBgType(bg.type);
@@ -374,6 +379,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
         type: "SET_STUDY_DATE_COLOR",
         payload: dateColorMode === "custom" ? dateColor : undefined,
       });
+      dispatch({ type: "SET_STUDY_CARD_STYLE", payload: draftCardStyleEnabled });
       // 保存背景设置
       saveStudyBackground({
         type: bgType,
@@ -467,6 +473,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     timeColor,
     dateColorMode,
     dateColor,
+    draftCardStyleEnabled,
     bgType,
     bgColor,
     bgAlpha,
@@ -848,11 +855,14 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
             onChange={(e) => setDraftDisplay((prev) => ({ ...prev, showQuote: e.target.checked }))}
           />
           <FormCheckbox
-            label="日期"
-            checked={!!draftDisplay.showDate}
-            onChange={(e) => setDraftDisplay((prev) => ({ ...prev, showDate: e.target.checked }))}
+            label="无背景卡片模式 (磨砂)"
+            checked={draftCardStyleEnabled}
+            onChange={(e) => setDraftCardStyleEnabled(e.target.checked)}
           />
         </FormRow>
+        <p className={styles.helpText} style={{ marginTop: 8 }}>
+          开启后自习页的“噪音、语录、倒计时”将呈现统一卡片底板样式，防止与自习大钟重叠干扰。
+        </p>
       </FormSection>
 
       <FormSection title="时间与日期颜色">

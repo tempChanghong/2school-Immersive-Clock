@@ -169,6 +169,8 @@ export interface StudyState {
   digitColor?: string;
   /** 倒计时数字透明度（0-1） */
   digitOpacity?: number;
+  /** 是否启用自习组件的小卡片样式 */
+  cardStyleEnabled?: boolean;
   /** 数字字体家族（覆盖自习页面的 --font-main） */
   numericFontFamily?: string;
   /** 文本字体家族（覆盖自习页面的 --font-ui） */
@@ -357,6 +359,7 @@ export type AppAction =
   | { type: "SET_STUDY_TEXT_FONT"; payload: string | undefined }
   | { type: "SET_STUDY_TIME_COLOR"; payload: string | undefined }
   | { type: "SET_STUDY_DATE_COLOR"; payload: string | undefined }
+  | { type: "SET_STUDY_CARD_STYLE"; payload: boolean }
   | { type: "SET_WEATHER_ALERT_ENABLED"; payload: boolean }
   | { type: "SET_MINUTELY_PRECIP_ENABLED"; payload: boolean }
   | { type: "SET_ERROR_POPUP_ENABLED"; payload: boolean }
