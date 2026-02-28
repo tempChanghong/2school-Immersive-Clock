@@ -2,6 +2,8 @@
 .boardContainer {
   width: 340px; /* 合适的侧边栏宽度 */
   margin: 24px 24px 24px 0; /* 上、右、下 24px，左 0（通过左边元素的 gap 控制） */
+  flex: 1;
+  min-height: 0;
   border-radius: 16px;      /* 调整为匹配卡片的圆角边框 */
   background: rgba(255, 255, 255, 0.08); /* 适配新卡片底板样式 */
   backdrop-filter: blur(12px); /* 适配新卡片磨砂程度 */
@@ -10,7 +12,6 @@
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1); /* 适配新卡片阴影 */
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
   z-index: 10;
   overflow: hidden; /* 防止子元素溢出圆角 */
   animation: fadeInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -83,13 +84,16 @@
 /* 内容区 */
 .contentArea {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 /* 滚动条美化 */
 .contentArea::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .contentArea::-webkit-scrollbar-track {
