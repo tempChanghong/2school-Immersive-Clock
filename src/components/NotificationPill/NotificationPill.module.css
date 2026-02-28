@@ -2,7 +2,18 @@
   position: fixed;
   top: 32px;
   left: 50%;
-  transform: translateX(-50%) translateY(-150%);
+  width: 0;
+  height: 0;
+  z-index: 9999;
+  pointer-events: none; /* container pass-through */
+}
+
+.pillItem {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  /* initial unmounted fallback, overridden by inline styles */
+  transform: translate(-50%, -150%);
   display: flex;
   align-items: center;
   background: rgba(20, 20, 25, 0.7);
@@ -10,18 +21,14 @@
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 100px;
-  padding: 10px 20px;
+  padding: 10px 12px 10px 20px;
   color: white;
-  z-index: 9999;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
+  pointer-events: auto; /* make clickable */
   opacity: 0;
   transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.pillContainer.visible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  width: max-content;
+  max-width: 90vw;
 }
 
 .iconWrapper {
@@ -30,6 +37,7 @@
   justify-content: center;
   margin-right: 12px;
   color: #60a5fa;
+  flex-shrink: 0;
 }
 
 .content {
@@ -39,6 +47,7 @@
   font-size: 16px;
   line-height: 1.4;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin-right: 8px;
 }
 
 .sender {
@@ -47,6 +56,7 @@
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 .message {
@@ -57,4 +67,27 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.closeBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  transform: scale(1.1);
+}
+
+.closeBtn:active {
+  transform: scale(0.95);
 }

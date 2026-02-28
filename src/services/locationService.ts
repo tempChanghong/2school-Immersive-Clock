@@ -426,18 +426,18 @@ async function resolveCoordsAndLocation(options?: LocationFlowOptions): Promise<
   addressInfo: AddressInfo | null;
 }> {
   // 专属版：强制硬编码位置为天津市
-  const coords = { lat: 39.125, lon: 117.190 };
+  const coords = { lat: 39.125, lon: 117.19 };
   const coordsSource = "hardcoded_tianjin";
-  
+
   updateCoordsCache(coords.lat, coords.lon, coordsSource);
 
   const city = "天津市";
   const addressInfo: AddressInfo = {
     address: "天津市",
     source: "Hardcoded",
-    raw: { city: "天津市" }
+    raw: { city: "天津市" },
   };
-  
+
   updateLocationCache(coords.lat, coords.lon, {
     city,
     address: addressInfo.address,

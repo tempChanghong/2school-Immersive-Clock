@@ -7,8 +7,8 @@ import { getAppSettings } from "../utils/appSettings";
 export function getTodayDateString() {
   const now = new Date();
   const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
   return `${yyyy}${mm}${dd}`;
 }
 
@@ -18,14 +18,14 @@ export function getTodayDateString() {
  */
 function buildHeaders(siteKey?: string): Record<string, string> {
   const headers: Record<string, string> = {
-    "Accept": "application/json",
+    Accept: "application/json",
   };
-  
+
   if (siteKey) {
     headers["x-site-key"] = siteKey;
     headers["x-app-token"] = siteKey;
   }
-  
+
   return headers;
 }
 
@@ -46,7 +46,7 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
   const dataKey = `classworks-data-${dateStr}`;
 
   try {
-    const url = `${serverUrl.replace(/\/$/, '')}/kv/${dataKey}`;
+    const url = `${serverUrl.replace(/\/$/, "")}/kv/${dataKey}`;
     const headers = buildHeaders(siteKey);
 
     let response = await fetch(url, { headers });
@@ -56,7 +56,7 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
     if (!response.ok && response.status === 404) {
       console.info(`No homework data found for today (${dataKey}), trying legacy key...`);
       const legacyKey = "classworks-config-homework-today";
-      const legacyUrl = `${serverUrl.replace(/\/$/, '')}/kv/${legacyKey}`;
+      const legacyUrl = `${serverUrl.replace(/\/$/, "")}/kv/${legacyKey}`;
       response = await fetch(legacyUrl, { headers });
       isLegacy = true;
 
@@ -64,7 +64,9 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
         if (response.status === 404) {
           return [];
         }
-        throw new Error(`Failed to fetch legacy homework: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch legacy homework: ${response.status} ${response.statusText}`
+        );
       }
     } else if (!response.ok) {
       throw new Error(`Failed to fetch homework: ${response.status} ${response.statusText}`);
@@ -79,7 +81,7 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
         if (typeof data[key] === "object" && data[key] !== null && data[key].name) {
           itemsArray.push({
             key: key,
-            ...data[key]
+            ...data[key],
           });
         }
       }
@@ -96,7 +98,7 @@ export async function fetchHomeworkData(): Promise<HomeworkItem[]> {
               content: itemObj.content,
               order: typeof itemObj.order === "number" ? itemObj.order : defaultOrder++,
               type: itemObj.type || "normal",
-              ...itemObj // Collect any other properties safely
+              ...itemObj, // Collect any other properties safely
             });
           }
         }
@@ -119,7 +121,7 @@ export async function testHomeworkConnection(
   siteKey?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const url = `${serverUrl.replace(/\/$/, '')}/kv/_info`;
+    const url = `${serverUrl.replace(/\/$/, "")}/kv/_info`;
     const headers = buildHeaders(siteKey);
 
     const response = await fetch(url, { headers });
@@ -132,7 +134,7 @@ export async function testHomeworkConnection(
     }
 
     const data = await response.json();
-    
+
     // ClassworksKV returns { device: {...} } for /_info in proxy mode
     if (data && data.device) {
       return { success: true };
@@ -145,7 +147,10 @@ export async function testHomeworkConnection(
     }
   } catch (error: any) {
     if (error.message && error.message.includes("ISO-8859-1")) {
-      return { success: false, error: "Token 或 命名空间 中包含不支持的中文字符，请使用拼音或标准的 UUID" };
+      return {
+        success: false,
+        error: "Token 或 命名空间 中包含不支持的中文字符，请使用拼音或标准的 UUID",
+      };
     }
     return { success: false, error: error.message || "网络请求失败，请检查服务端地址" };
   }
@@ -231,7 +236,11 @@ export async function saveClassworksData(dateStr: string, data: any): Promise<bo
 /**
  * 更新单科作业
  */
-export async function updateHomeworkItem(dateStr: string, key: string, newContent: string): Promise<boolean> {
+export async function updateHomeworkItem(
+  dateStr: string,
+  key: string,
+  newContent: string
+): Promise<boolean> {
   const rawData = await fetchRawClassworksData(dateStr);
   if (!rawData) {
     console.warn("Failed to update homework item: raw data not found");
@@ -255,5 +264,3 @@ export async function updateHomeworkItem(dateStr: string, key: string, newConten
 
   return await saveClassworksData(dateStr, rawData);
 }
-
-

@@ -69,8 +69,6 @@ export interface AppSettings {
       emptySubjectDisplay: "card" | "button";
       showQuickTools: boolean;
       autoSave: boolean;
-      blockNonTodayAutoSave: boolean;
-      blockPastDataEdit: boolean;
     };
   };
 
@@ -183,8 +181,6 @@ const DEFAULT_SETTINGS: AppSettings = {
       emptySubjectDisplay: "button",
       showQuickTools: true,
       autoSave: true,
-      blockNonTodayAutoSave: true,
-      blockPastDataEdit: false,
     },
   },
   study: {
@@ -314,7 +310,10 @@ export function getAppSettings(): AppSettings {
         },
         weather: { ...DEFAULT_SETTINGS.general.weather, ...(parsed.general?.weather || {}) },
         timeSync: { ...DEFAULT_SETTINGS.general.timeSync, ...(parsed.general?.timeSync || {}) },
-        classworks: { ...DEFAULT_SETTINGS.general.classworks, ...(parsed.general?.classworks || {}) },
+        classworks: {
+          ...DEFAULT_SETTINGS.general.classworks,
+          ...(parsed.general?.classworks || {}),
+        },
       },
       study: {
         ...DEFAULT_SETTINGS.study,

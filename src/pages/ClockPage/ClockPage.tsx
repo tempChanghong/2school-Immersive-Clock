@@ -330,7 +330,8 @@ export function ClockPage() {
         style.backgroundColor = "transparent";
       } else if (backgroundSettings.type === "color" && backgroundSettings.color) {
         style.backgroundImage = "none";
-        const a = typeof backgroundSettings.colorAlpha === "number" ? backgroundSettings.colorAlpha : 1;
+        const a =
+          typeof backgroundSettings.colorAlpha === "number" ? backgroundSettings.colorAlpha : 1;
         style.backgroundColor = hexToRgba(backgroundSettings.color, a);
       }
     }

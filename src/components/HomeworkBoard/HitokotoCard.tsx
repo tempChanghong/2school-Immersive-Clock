@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+
 import styles from "./HomeworkBoard.module.css";
 
 export const HitokotoCard: React.FC = () => {
@@ -29,16 +30,11 @@ export const HitokotoCard: React.FC = () => {
   }, [fetchHitokoto]);
 
   return (
-    <div 
-      className={styles.hitokotoCard}
-      onClick={fetchHitokoto}
-    >
-      <div className={styles.hitokotoContent}>
-        {loading && !content ? "正在加载..." : content}
-      </div>
+    <div className={styles.hitokotoCard} onClick={fetchHitokoto}>
+      <div className={styles.hitokotoContent}>{loading && !content ? "正在加载..." : content}</div>
       {(author || origin) && (
         <div className={styles.hitokotoAuthor}>
-          {author && <span style={{ marginRight: '8px' }}>{author}</span>}
+          {author && <span style={{ marginRight: "8px" }}>{author}</span>}
           {origin && <span>《{origin}》</span>}
         </div>
       )}

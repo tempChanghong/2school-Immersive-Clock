@@ -55,15 +55,12 @@ export function Stopwatch() {
   /**
    * 秒表递增处理函数
    */
-  const handleTick = useCallback(
-    (count: number) => {
-      // 累加局部状态以更新 UI
-      setLocalElapsedTime((prev) => prev + count * STOPWATCH_TICK_MS);
-      // 记录本次累加但未向全局下发的计数
-      unsyncedCountRef.current += count;
-    },
-    []
-  );
+  const handleTick = useCallback((count: number) => {
+    // 累加局部状态以更新 UI
+    setLocalElapsedTime((prev) => prev + count * STOPWATCH_TICK_MS);
+    // 记录本次累加但未向全局下发的计数
+    unsyncedCountRef.current += count;
+  }, []);
 
   // 使用累积计时器：按10ms间隔计算应触发次数，仅仅修改局部状态
   useAccumulatingTimer(handleTick, stopwatch.isActive, STOPWATCH_TICK_MS);
@@ -79,16 +76,10 @@ export function Stopwatch() {
         className={`${styles.time} ${stopwatch.isActive ? styles.running : ""}`}
         aria-live="polite"
       >
-        {localElapsedTime === 0 ? (
-          <span className={styles.placeholder}>00:00:00</span>
-        ) : (
-          timeString
-        )}
+        {localElapsedTime === 0 ? <span className={styles.placeholder}>00:00:00</span> : timeString}
       </div>
 
-      {localElapsedTime > 0 && !stopwatch.isActive && (
-        <div className={styles.status}>已暂停</div>
-      )}
+      {localElapsedTime > 0 && !stopwatch.isActive && <div className={styles.status}>已暂停</div>}
 
       {isLongDuration && <div className={styles.milestone}>🎉 已超过1小时！</div>}
     </div>

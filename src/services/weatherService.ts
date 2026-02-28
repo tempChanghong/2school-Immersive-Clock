@@ -95,7 +95,8 @@ function mapWmoToIconAndText(wmoCode: number): { icon: string; text: string } {
  */
 export async function fetchWeatherNow(_location: string): Promise<WeatherNow> {
   try {
-    const url = "https://api.open-meteo.com/v1/forecast?latitude=39.125&longitude=117.19&current=temperature_2m,weather_code";
+    const url =
+      "https://api.open-meteo.com/v1/forecast?latitude=39.125&longitude=117.19&current=temperature_2m,weather_code";
     const res = await fetch(url);
     if (!res.ok) {
       return { error: `HTTP Error: ${res.status}` } as WeatherNow;
@@ -129,8 +130,8 @@ export async function fetchWeatherNow(_location: string): Promise<WeatherNow> {
       },
       refer: {
         sources: ["Open-Meteo"],
-        license: []
-      }
+        license: [],
+      },
     };
   } catch (e: unknown) {
     return { error: String(e) } as WeatherNow;
@@ -161,7 +162,9 @@ export async function fetchAirQualityCurrent(
   _lat: number,
   _lon: number
 ): Promise<AirQualityCurrentResponse> {
-  return { error: "Air quality not supported with Open-Meteo currently" } as AirQualityCurrentResponse;
+  return {
+    error: "Air quality not supported with Open-Meteo currently",
+  } as AirQualityCurrentResponse;
 }
 
 /**

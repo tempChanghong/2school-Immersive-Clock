@@ -1158,7 +1158,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
                         ctx.fillRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
                         // 强制输出 JPEG 格式加上 0.7 压缩避免 base64 超出 LocalStorage 容量 (5M)
-                        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75); 
+                        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75);
                         setBgImage(compressedDataUrl);
                       } else {
                         // Fallback

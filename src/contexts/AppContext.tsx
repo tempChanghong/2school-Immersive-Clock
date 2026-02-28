@@ -757,25 +757,25 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case "ADD_NOTIFICATION": {
       const isUrgent = action.payload.level === "urgent";
-      const existingNotifs = state.notifications.filter(n => n.id !== action.payload.id);
-      
+      const existingNotifs = state.notifications.filter((n) => n.id !== action.payload.id);
+
       return {
         ...state,
         notifications: [action.payload, ...existingNotifs].slice(0, 100),
-        currentUrgentNotification: isUrgent ? action.payload : state.currentUrgentNotification
+        currentUrgentNotification: isUrgent ? action.payload : state.currentUrgentNotification,
       };
     }
 
     case "DISMISS_NOTIFICATION":
       return {
         ...state,
-        notifications: state.notifications.filter(n => n.id !== action.payload)
+        notifications: state.notifications.filter((n) => n.id !== action.payload),
       };
 
     case "DISMISS_URGENT_NOTIFICATION":
       return {
         ...state,
-        currentUrgentNotification: null
+        currentUrgentNotification: null,
       };
 
     default:

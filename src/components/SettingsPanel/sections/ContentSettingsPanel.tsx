@@ -23,7 +23,7 @@ export const ContentSettingsPanel: React.FC<ContentSettingsPanelProps> = ({ onRe
   const [draftInterval, setDraftInterval] = React.useState<number>(
     quoteSettings.autoRefreshInterval
   );
-  
+
   const channelSaveRef = React.useRef<(() => void) | null>(null);
 
   const formatRefreshIntervalText = useCallback((seconds: number): string => {
@@ -42,7 +42,7 @@ export const ContentSettingsPanel: React.FC<ContentSettingsPanelProps> = ({ onRe
     onRegisterSave?.(() => {
       // 保存刷新间隔
       dispatch({ type: "SET_QUOTE_AUTO_REFRESH_INTERVAL", payload: draftInterval });
-      
+
       // 保存渠道草稿
       channelSaveRef.current?.();
     });

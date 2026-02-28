@@ -128,7 +128,9 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             ]}
             activeKey={activeCategory}
             onChange={(key) =>
-              setActiveCategory(key as "basic" | "homework" | "weather" | "monitor" | "quotes" | "about")
+              setActiveCategory(
+                key as "basic" | "homework" | "weather" | "monitor" | "quotes" | "about"
+              )
             }
             variant="announcement"
             size="md"
@@ -149,7 +151,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
           {/* 作业板设置 */}
           {activeCategory === "homework" && (
-            <HomeworkSettingsPanel 
+            <HomeworkSettingsPanel
               onRegisterSave={(fn: () => void) => {
                 homeworkSaveRef.current = fn;
               }}
