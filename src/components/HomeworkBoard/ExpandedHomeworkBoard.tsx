@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Modal } from "../Modal/Modal";
 import { HitokotoCard } from "./HitokotoCard";
 import { AttendanceCard } from "./AttendanceCard";
@@ -6,6 +6,7 @@ import { HomeworkEditDialog } from "./HomeworkEditDialog";
 import { Edit } from "lucide-react";
 import type { HomeworkItem } from "../../types/classworks";
 import { getAppSettings } from "../../utils/appSettings";
+import { useMasonryLayout } from "../../hooks/useMasonryLayout";
 import styles from "./HomeworkBoard.module.css";
 
 const DEFAULT_SUBJECTS: HomeworkItem[] = [
@@ -30,8 +31,9 @@ interface ExpandedHomeworkBoardProps {
 
 export const ExpandedHomeworkBoard: React.FC<ExpandedHomeworkBoardProps> = ({ isOpen, onClose, data, onSaveItem }) => {
   const [editingItem, setEditingItem] = useState<{key: string, name: string, content: string} | null>(null);
-
+  
   const hitokotoEnabled = getAppSettings().general.classworks.hitokotoEnabled ?? true;
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
   const splitContent = (content: string) => {
     if (!content) return [];
@@ -54,6 +56,21 @@ export const ExpandedHomeworkBoard: React.FC<ExpandedHomeworkBoardProps> = ({ is
       setEditingItem(null);
     }
   };
+  
+  // 1. 组合并排序数据
+  const mergedData = useMemo(() => {
+    const list = [...data];
+    DEFAULT_SUBJECTS.forEach((ds) => {
+      if (!list.some((item) => item.key === ds.key || item.name === ds.name)) {
+        list.push(ds);
+      }
+    });
+    list.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+    return list;
+  }, [data]);
+
+  // 2. 利用自定义 Hook 进行瀑布流列分配
+  const masonryColumns = useMasonryLayout(gridContainerRef, mergedData);
 
   return (
     <>
@@ -66,59 +83,54 @@ export const ExpandedHomeworkBoard: React.FC<ExpandedHomeworkBoardProps> = ({ is
       <div className={styles.expandedContainer}>
         {hitokotoEnabled && <HitokotoCard />}
         
-        <div className={styles.expandedGrid}>
-          {(() => {
-            const mergedData = [...data];
-            DEFAULT_SUBJECTS.forEach((ds) => {
-              if (!mergedData.some((item) => item.key === ds.key || item.name === ds.name)) {
-                mergedData.push(ds);
-              }
-            });
-            mergedData.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+        {/* 瀑布流容器 */}
+        <div className={styles.expandedGrid} ref={gridContainerRef}>
+          {masonryColumns.map((colItems, colIdx) => (
+            <div key={`col-${colIdx}`} className={styles.masonryColumn}>
+              {colItems.map((item) => {
+                if (item.type === "hitokoto" || item.type === "exam") return null;
 
-            return mergedData.map(item => {
-              if (item.type === "hitokoto" || item.type === "exam") return null;
+                if (item.type === "attendance") {
+                  return <AttendanceCard key={item.key} item={item} />;
+                }
 
-              if (item.type === "attendance") {
-                return <AttendanceCard key={item.key} item={item} />;
-              }
-
-              return (
-                <div 
-                  key={item.key} 
-                  className={styles.card}
-                  onClick={() => handleCardClick(item)}
-                  style={{ cursor: 'pointer' }}
-                  title="点击编辑"
-                >
-                  <div className={styles.cardHeader}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <h3 className={styles.cardTitle}>{item.name}</h3>
-                      <Edit size={14} className={styles.editIcon} style={{ opacity: 0.5 }} />
+                return (
+                  <div 
+                    key={item.key} 
+                    className={styles.card}
+                    onClick={() => handleCardClick(item)}
+                    style={{ cursor: 'pointer' }}
+                    title="点击编辑"
+                  >
+                    <div className={styles.cardHeader}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h3 className={styles.cardTitle}>{item.name}</h3>
+                        <Edit size={14} className={styles.editIcon} style={{ opacity: 0.5 }} />
+                      </div>
+                      {item.type && item.type !== "normal" && item.type !== "custom" && (
+                        <span className={styles.cardBadge}>{item.type}</span>
+                      )}
                     </div>
-                    {item.type && item.type !== "normal" && item.type !== "custom" && (
-                      <span className={styles.cardBadge}>{item.type}</span>
-                    )}
+                    <div className={styles.cardBody}>
+                      <ul className={styles.taskList}>
+                        {splitContent(item.content).map((line, idx) => (
+                          <li key={`${item.key}-line-${idx}`} className={styles.taskItem}>
+                            {line}
+                          </li>
+                        ))}
+                      </ul>
+                      {(!item.content || item.content.trim() === '') && (
+                        <div style={{ opacity: 0.5, fontSize: '0.9rem', fontStyle: 'italic', padding: '8px 0' }}>暂无作业，点击添加</div>
+                      )}
+                    </div>
                   </div>
-                  <div className={styles.cardBody}>
-                    <ul className={styles.taskList}>
-                      {splitContent(item.content).map((line, idx) => (
-                        <li key={`${item.key}-line-${idx}`} className={styles.taskItem}>
-                          {line}
-                        </li>
-                      ))}
-                    </ul>
-                    {(!item.content || item.content.trim() === '') && (
-                      <div style={{ opacity: 0.5, fontSize: '0.9rem', fontStyle: 'italic', padding: '8px 0' }}>暂无作业，点击添加</div>
-                    )}
-                  </div>
-                </div>
-              );
-            });
-          })()}
+                );
+              })}
+            </div>
+          ))}
 
           {data.length === 0 && (
-            <div className={styles.emptyState} style={{ gridColumn: '1 / -1' }}>
+            <div className={styles.emptyState} style={{ width: '100%', textAlign: 'center' }}>
               <p>今天没有作业记录哦~</p>
               <span className={styles.emptyHint}>可能是放假，或者后端暂未配置</span>
             </div>
