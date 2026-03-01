@@ -469,6 +469,7 @@ export function Study() {
         {display.showCountdown && (
           <div
             className={`${styles.widgetBox} ${study.cardStyleEnabled !== false ? styles.moduleCard : ""}`}
+            data-tour="countdown-widget"
           >
             <div className={styles.countdownCarousel} ref={countdownRef} aria-live="polite">
               <div

@@ -10,6 +10,7 @@ import {
   subscribeErrorCenter,
   type ErrorCenterMode,
 } from "../../../utils/errorCenter";
+import { startTour } from "../../../utils/tour";
 import { getWeatherCache } from "../../../utils/weatherStorage";
 import {
   FormSection,
@@ -19,7 +20,7 @@ import {
   FormRow,
   FormSegmented,
 } from "../../FormComponents";
-import { TrashIcon, SaveIcon, FileIcon } from "../../Icons";
+import { TrashIcon, SaveIcon, FileIcon, PlayIcon } from "../../Icons";
 import styles from "../SettingsPanel.module.css";
 
 // 版本建议优先从环境变量（vite.config 注入）读取，回退到 package.json
@@ -263,6 +264,24 @@ const AboutSettingsPanel: React.FC<AboutSettingsPanelProps> = ({ onRegisterSave 
             {repoUrl}
           </a>
         </p>
+
+        <div style={{ marginTop: 16 }}>
+          <FormButton
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              const closeBtn = document.getElementById("settings-close-btn");
+              if (closeBtn) closeBtn.click();
+              startTour(true, {
+                onStart: () => dispatch({ type: "SHOW_HUD" }),
+                switchMode: (m) => dispatch({ type: "SET_MODE", payload: m }),
+              });
+            }}
+            icon={<PlayIcon size={16} />}
+          >
+            重新观看新手引导
+          </FormButton>
+        </div>
       </FormSection>
 
       <FormSection title="使用声明">

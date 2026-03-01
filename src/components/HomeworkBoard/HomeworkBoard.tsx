@@ -71,7 +71,12 @@ export const HomeworkBoard: React.FC<HomeworkBoardProps> = ({ isOpen }) => {
   }
 
   return (
-    <div className={styles.boardContainer} role="region" aria-label="作业板">
+    <div
+      className={styles.boardContainer}
+      role="region"
+      aria-label="作业板"
+      data-tour="homework-board"
+    >
       <div className={styles.header}>
         <div className={styles.titleArea}>
           <h2 className={styles.title}>作业板</h2>

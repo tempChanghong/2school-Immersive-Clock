@@ -352,7 +352,7 @@ export function ClockPage() {
       }}
     >
       {/* 1. 顶部 Header 区 (Logo + HUD) */}
-      <header className={styles.header}>
+      <header className={styles.header} data-tour="hud-header">
         <div className={styles.schoolLogoContainer}>
           <img src={schoolLogo} alt="School Logo" className={styles.schoolLogo} />
           <span className={styles.schoolName}>天津市第二中学</span>
@@ -406,6 +406,9 @@ export function ClockPage() {
               startTour(true, {
                 onStart: () => {
                   dispatch({ type: "SHOW_HUD" });
+                },
+                switchMode: (m) => {
+                  dispatch({ type: "SET_MODE", payload: m });
                 },
               });
             }}
