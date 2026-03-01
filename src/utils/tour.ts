@@ -214,7 +214,7 @@ export const startTour = (force = false, options?: TourOptions) => {
         element: '[data-tour="countdown-widget"]',
         popover: {
           title: "倒计时与测验工具",
-          description: "在这里你可以配置距离中高考的倒数天数，下方还能一键开启课堂小测验或番茄钟。",
+          description: "在这里你可以配置距离中高考的倒数天数，还可以自定义倒计时。",
           side: "left",
           align: "center",
         },
@@ -224,7 +224,7 @@ export const startTour = (force = false, options?: TourOptions) => {
         popover: {
           title: "全局控制与深度偏好",
           description:
-            "顶部悬浮栏可用于随时切换“时钟/自习/倒计时”模式。而在左上角的隐藏按钮中，包含了极度丰富的各类个性化设置面板。",
+            "顶部悬浮栏可用于随时切换“时钟/自习/倒计时”模式。",
           side: "bottom",
           align: "center",
         },
