@@ -79,10 +79,10 @@ export function App() {
   useEffect(() => {
     const applyEcoMode = () => {
       try {
-        const isEco = getAppSettings().general.ecoMode ?? true;
-        document.body.classList.toggle("eco-mode", isEco);
+        const disableBlur = getAppSettings().performance.disableBlurEffects ?? true;
+        document.body.classList.toggle("disable-blur", disableBlur);
       } catch {
-        document.body.classList.toggle("eco-mode", true);
+        document.body.classList.toggle("disable-blur", true);
       }
     };
 

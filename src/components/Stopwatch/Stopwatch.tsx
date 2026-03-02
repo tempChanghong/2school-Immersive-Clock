@@ -65,8 +65,8 @@ export function Stopwatch() {
 
   // 使用累积计时器：按10ms间隔计算应触发次数，仅仅修改局部状态
   // 在 Eco 模式下，仅每 1000ms 更新一次 UI 以节省性能
-  const isEcoMode = getAppSettings().general.ecoMode ?? true;
-  const tickMs = isEcoMode ? 1000 : STOPWATCH_TICK_MS;
+  const reduceTimer = getAppSettings().performance.reduceTimerPrecision ?? true;
+  const tickMs = reduceTimer ? 1000 : STOPWATCH_TICK_MS;
 
   useAccumulatingTimer(handleTick, stopwatch.isActive, tickMs);
 

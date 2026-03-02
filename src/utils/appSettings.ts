@@ -21,7 +21,6 @@ export interface AppSettings {
     startup: {
       initialMode: AppMode;
     };
-    ecoMode: boolean; // 新增环保/低性能模式
     quote: {
       autoRefreshInterval: number;
       channels: QuoteSourceConfig[];
@@ -108,6 +107,12 @@ export interface AppSettings {
     };
   };
 
+  performance: {
+    disableBlurEffects: boolean;
+    throttleAnimations: boolean;
+    reduceTimerPrecision: boolean;
+  };
+
   noiseControl: {
     maxLevelDb: number;
     baselineDb: number;
@@ -137,7 +142,6 @@ const DEFAULT_SETTINGS: AppSettings = {
     startup: {
       initialMode: "clock",
     },
-    ecoMode: true, // 默认开启适配低压 CPU 一体机
     quote: {
       autoRefreshInterval: 600,
       channels: [],
@@ -186,7 +190,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     },
   },
   study: {
-    targetYear: new Date().getFullYear() + 1,
+    targetYear: 2028,
     countdownType: "gaokao",
     countdownMode: "gaokao", // 默认值
     customCountdown: { name: "", date: "" },
@@ -232,6 +236,11 @@ const DEFAULT_SETTINGS: AppSettings = {
     reportAutoPopup: true,
     reportRetentionDays: DEFAULT_NOISE_REPORT_RETENTION_DAYS,
     alertSoundEnabled: false,
+  },
+  performance: {
+    disableBlurEffects: true,
+    throttleAnimations: true,
+    reduceTimerPrecision: true,
   },
 };
 
@@ -305,18 +314,25 @@ export function getAppSettings(): AppSettings {
         ...DEFAULT_SETTINGS.general,
         ...parsed.general,
         startup: { ...DEFAULT_SETTINGS.general.startup, ...(parsed.general?.startup || {}) },
-        ecoMode: parsed.general?.ecoMode ?? DEFAULT_SETTINGS.general.ecoMode,
-        quote: { ...DEFAULT_SETTINGS.general.quote, ...(parsed.general?.quote || {}) },
-        announcement: {
-          ...DEFAULT_SETTINGS.general.announcement,
-          ...(parsed.general?.announcement || {}),
-        },
-        weather: { ...DEFAULT_SETTINGS.general.weather, ...(parsed.general?.weather || {}) },
         timeSync: { ...DEFAULT_SETTINGS.general.timeSync, ...(parsed.general?.timeSync || {}) },
         classworks: {
           ...DEFAULT_SETTINGS.general.classworks,
           ...(parsed.general?.classworks || {}),
         },
+      },
+      performance: {
+        disableBlurEffects:
+          parsed.performance?.disableBlurEffects ??
+          parsed.general?.ecoMode ??
+          DEFAULT_SETTINGS.performance.disableBlurEffects,
+        throttleAnimations:
+          parsed.performance?.throttleAnimations ??
+          parsed.general?.ecoMode ??
+          DEFAULT_SETTINGS.performance.throttleAnimations,
+        reduceTimerPrecision:
+          parsed.performance?.reduceTimerPrecision ??
+          parsed.general?.ecoMode ??
+          DEFAULT_SETTINGS.performance.reduceTimerPrecision,
       },
       study: {
         ...DEFAULT_SETTINGS.study,
@@ -368,7 +384,6 @@ export function updateAppSettings(
         startup: generalUpdates.startup
           ? { ...current.general.startup, ...generalUpdates.startup }
           : current.general.startup,
-        ecoMode: generalUpdates.ecoMode ?? current.general.ecoMode,
         quote: generalUpdates.quote
           ? { ...current.general.quote, ...generalUpdates.quote }
           : current.general.quote,
@@ -439,6 +454,9 @@ export function updateAppSettings(
     if (updates.noiseControl) {
       nextSettings.noiseControl = { ...current.noiseControl, ...updates.noiseControl };
     }
+    if (updates.performance) {
+      nextSettings.performance = { ...current.performance, ...updates.performance };
+    }
 
     localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(nextSettings));
   } catch (error) {
@@ -473,6 +491,14 @@ export function updateStudySettings(updates: DeepPartial<AppSettings["study"]>):
 export function updateGeneralSettings(updates: DeepPartial<AppSettings["general"]>): void {
   updateAppSettings({
     general: updates,
+  });
+}
+
+
+
+export function updatePerformanceSettings(updates: DeepPartial<AppSettings["performance"]>): void {
+  updateAppSettings({
+    performance: updates,
   });
 }
 

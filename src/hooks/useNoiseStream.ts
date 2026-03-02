@@ -22,8 +22,8 @@ export function useNoiseStream(): NoiseStreamSnapshot & { retry: () => void } {
       if (!mounted) return;
 
       const now = Date.now();
-      const isEcoMode = getAppSettings().general.ecoMode ?? true;
-      const throttleMs = isEcoMode ? 500 : 0;
+      const throttleAnim = getAppSettings().performance.throttleAnimations ?? true;
+      const throttleMs = throttleAnim ? 500 : 0;
 
       if (now - lastUpdateRef.current >= throttleMs) {
         lastUpdateRef.current = now;

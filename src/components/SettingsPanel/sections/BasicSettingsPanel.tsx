@@ -5,6 +5,7 @@ import { AppMode, CountdownItem } from "../../../types";
 import {
   getAppSettings,
   updateGeneralSettings,
+  updatePerformanceSettings,
   updateStudySettings,
   updateTimeSyncSettings,
 } from "../../../utils/appSettings";
@@ -59,7 +60,11 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
   const dispatch = useAppDispatch();
 
   const [startupMode, setStartupMode] = useState<AppMode>("clock");
-  const [ecoMode, setEcoMode] = useState<boolean>(true);
+
+  // 性能设置细分
+  const [perfDisableBlur, setPerfDisableBlur] = useState<boolean>(true);
+  const [perfThrottleAnim, setPerfThrottleAnim] = useState<boolean>(true);
+  const [perfReduceTimer, setPerfReduceTimer] = useState<boolean>(true);
 
   // 倒计时模式（重构）：'gaokao' | 'single' | 'multi'
   const [countdownMode, setCountdownMode] = useState<"gaokao" | "single" | "multi">("gaokao");
@@ -167,7 +172,12 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     try {
       const startup = getAppSettings().general.startup;
       setStartupMode(resolveStartupMode(startup.initialMode));
-      setEcoMode(getAppSettings().general.ecoMode ?? true);
+
+      const perf = getAppSettings().performance;
+      setPerfDisableBlur(perf.disableBlurEffects);
+      setPerfThrottleAnim(perf.throttleAnimations);
+      setPerfReduceTimer(perf.reduceTimerPrecision);
+
       const saved = getAppSettings().study.countdownMode;
       if (saved === "gaokao" || saved === "single" || saved === "multi") {
         setCountdownMode(saved);
@@ -443,7 +453,13 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
       dispatch({ type: "SET_STUDY_NUMERIC_FONT", payload: nextNumeric });
       dispatch({ type: "SET_STUDY_TEXT_FONT", payload: nextText });
 
-      updateGeneralSettings({ startup: { initialMode: startupMode }, ecoMode });
+      updateGeneralSettings({ startup: { initialMode: startupMode } });
+
+      updatePerformanceSettings({
+        disableBlurEffects: perfDisableBlur,
+        throttleAnimations: perfThrottleAnim,
+        reduceTimerPrecision: perfReduceTimer,
+      });
 
       updateTimeSyncSettings((current) => ({
         enabled: timeSyncEnabled,
@@ -491,7 +507,9 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     textFontMode,
     textFontSelected,
     startupMode,
-    ecoMode,
+    perfDisableBlur,
+    perfThrottleAnim,
+    perfReduceTimer,
     timeSyncEnabled,
     timeSyncProvider,
     timeSyncHttpDateUrl,
@@ -622,15 +640,33 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
             onChange={(v) => setStartupMode(v as AppMode)}
           />
         </FormRow>
+        <p className={styles.helpText}>该设置将在下次启动（或刷新页面）后生效。</p>
+      </FormSection>
+
+      <FormSection title="性能设置">
         <FormRow gap="sm" align="center">
           <FormCheckbox
-            label="低性能模式 (Eco Mode)"
-            checked={ecoMode}
-            onChange={(e) => setEcoMode(e.target.checked)}
+            label="禁用毛玻璃特效，并加深背景图"
+            checked={perfDisableBlur}
+            onChange={(e) => setPerfDisableBlur(e.target.checked)}
+          />
+        </FormRow>
+        <FormRow gap="sm" align="center">
+          <FormCheckbox
+            label="降低实时波形图帧率 (显著降低CPU占用)"
+            checked={perfThrottleAnim}
+            onChange={(e) => setPerfThrottleAnim(e.target.checked)}
+          />
+        </FormRow>
+        <FormRow gap="sm" align="center">
+          <FormCheckbox
+            label="关闭毫秒级时钟刷新 (秒表性能降级)"
+            checked={perfReduceTimer}
+            onChange={(e) => setPerfReduceTimer(e.target.checked)}
           />
         </FormRow>
         <p className={styles.helpText}>
-          该设置将在下次启动（或刷新页面）后生效。开启低性能模式可大幅降低 CPU 占用，但会关闭毛玻璃等高级特效，并降低部分图表的渲染频率。
+          若在运行在低压 CPU（或教学一体机等低配机器上），建议开启以上选项以大幅降低资源占用。
         </p>
       </FormSection>
 
