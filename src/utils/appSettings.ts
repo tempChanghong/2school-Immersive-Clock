@@ -21,6 +21,7 @@ export interface AppSettings {
     startup: {
       initialMode: AppMode;
     };
+    ecoMode: boolean; // 新增环保/低性能模式
     quote: {
       autoRefreshInterval: number;
       channels: QuoteSourceConfig[];
@@ -136,6 +137,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     startup: {
       initialMode: "clock",
     },
+    ecoMode: true, // 默认开启适配低压 CPU 一体机
     quote: {
       autoRefreshInterval: 600,
       channels: [],
@@ -303,6 +305,7 @@ export function getAppSettings(): AppSettings {
         ...DEFAULT_SETTINGS.general,
         ...parsed.general,
         startup: { ...DEFAULT_SETTINGS.general.startup, ...(parsed.general?.startup || {}) },
+        ecoMode: parsed.general?.ecoMode ?? DEFAULT_SETTINGS.general.ecoMode,
         quote: { ...DEFAULT_SETTINGS.general.quote, ...(parsed.general?.quote || {}) },
         announcement: {
           ...DEFAULT_SETTINGS.general.announcement,
@@ -365,6 +368,7 @@ export function updateAppSettings(
         startup: generalUpdates.startup
           ? { ...current.general.startup, ...generalUpdates.startup }
           : current.general.startup,
+        ecoMode: generalUpdates.ecoMode ?? current.general.ecoMode,
         quote: generalUpdates.quote
           ? { ...current.general.quote, ...generalUpdates.quote }
           : current.general.quote,

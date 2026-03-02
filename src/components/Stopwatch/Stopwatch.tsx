@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { STOPWATCH_TICK_MS } from "../../constants/timer";
 import { useAppState, useAppDispatch } from "../../contexts/AppContext";
 import { useAccumulatingTimer } from "../../hooks/useTimer";
+import { getAppSettings } from "../../utils/appSettings";
 import { formatStopwatch } from "../../utils/formatTime";
 
 import styles from "./Stopwatch.module.css";
@@ -63,7 +64,11 @@ export function Stopwatch() {
   }, []);
 
   // 使用累积计时器：按10ms间隔计算应触发次数，仅仅修改局部状态
-  useAccumulatingTimer(handleTick, stopwatch.isActive, STOPWATCH_TICK_MS);
+  // 在 Eco 模式下，仅每 1000ms 更新一次 UI 以节省性能
+  const isEcoMode = getAppSettings().general.ecoMode ?? true;
+  const tickMs = isEcoMode ? 1000 : STOPWATCH_TICK_MS;
+
+  useAccumulatingTimer(handleTick, stopwatch.isActive, tickMs);
 
   // 基于 localElapsedTime 而不是 stopwatch.elapsedTime 渲染
   const timeString = formatStopwatch(localElapsedTime);

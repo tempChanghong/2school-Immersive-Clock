@@ -79,6 +79,19 @@ function parseTimeApiBodyToEpochMs(body: unknown): number {
   const unixtime = extractNumberField(obj, "unixtime");
   if (unixtime != null) return Math.trunc(unixtime * 1000);
 
+  const currentTime = extractNumberField(obj, "currentTime");
+  if (currentTime != null) {
+    return Math.trunc(String(currentTime).length <= 10 ? currentTime * 1000 : currentTime);
+  }
+
+  const dataObj = obj.data as Record<string, unknown> | undefined;
+  if (dataObj && typeof dataObj === "object") {
+    const taobaoT = extractNumberField(dataObj, "t");
+    if (taobaoT != null) {
+      return Math.trunc(String(taobaoT).length <= 10 ? taobaoT * 1000 : taobaoT);
+    }
+  }
+
   const datetimeRaw =
     (typeof obj.datetime === "string" ? obj.datetime : null) ||
     (typeof obj.utc_datetime === "string" ? obj.utc_datetime : null);
@@ -87,7 +100,9 @@ function parseTimeApiBodyToEpochMs(body: unknown): number {
     if (Number.isFinite(ms)) return ms;
   }
 
-  throw new Error("时间 API 响应缺少可识别的时间字段（epochMs/epochSeconds/unixtime/datetime）");
+  throw new Error(
+    "时间 API 响应缺少可识别的时间字段（epochMs/epochSeconds/unixtime/datetime/currentTime/t）"
+  );
 }
 
 /**
@@ -155,8 +170,14 @@ async function measureOffsetOnce(options: {
     const t0 = Date.now();
 
     if (options.provider === "httpDate") {
-      const resp = await fetch(options.url, {
-        method: "GET",
+      // 纯 Web 环境直接请求同源自身，规避 CORS；使用 HEAD 节省流量
+      const url =
+        typeof window !== "undefined" && window.location && window.location.href.startsWith("http")
+          ? window.location.href
+          : options.url;
+
+      const resp = await fetch(url, {
+        method: "HEAD",
         cache: "no-store",
         credentials: "omit",
         signal: controller.signal,
@@ -165,10 +186,10 @@ async function measureOffsetOnce(options: {
       const t1 = Date.now();
       const rttMs = Math.max(0, t1 - t0);
       if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+        throw new Error(`同源对时失败: HTTP ${resp.status} ${resp.statusText}`);
       }
       if (!dateHeader) {
-        throw new Error("响应缺少 Date 头（跨域请求需服务端 Expose-Headers: Date）");
+        throw new Error("响应缺少 Date 头（Vercel 等环境通常自带 Date 头）");
       }
       const serverEpochMs = parseHttpDateToEpochMs(dateHeader);
       const estimatedClientMid = (t0 + t1) / 2;
@@ -176,13 +197,50 @@ async function measureOffsetOnce(options: {
       return { offsetMs, rttMs, serverEpochMs, measuredAt: t1 };
     }
 
-    const body = await fetchJson(options.url, controller.signal);
-    const t1 = Date.now();
-    const rttMs = Math.max(0, t1 - t0);
-    const serverEpochMs = parseTimeApiBodyToEpochMs(body);
-    const estimatedClientMid = (t0 + t1) / 2;
-    const offsetMs = Math.round(serverEpochMs - estimatedClientMid);
-    return { offsetMs, rttMs, serverEpochMs, measuredAt: t1 };
+    // Time API (支持极度稳定的国内接口与跨域 fallback)
+    try {
+      // 自动替换不可靠的 default 为 苏宁时间接口
+      let targetUrl = options.url || "https://f.m.suning.com/api/ct.do";
+      if (targetUrl.includes("worldtimeapi.org")) {
+        targetUrl = "https://f.m.suning.com/api/ct.do";
+      }
+
+      const body = await fetchJson(targetUrl, controller.signal);
+      const t1 = Date.now();
+      const rttMs = Math.max(0, t1 - t0);
+      const serverEpochMs = parseTimeApiBodyToEpochMs(body);
+      const estimatedClientMid = (t0 + t1) / 2;
+      const offsetMs = Math.round(serverEpochMs - estimatedClientMid);
+      return { offsetMs, rttMs, serverEpochMs, measuredAt: t1 };
+    } catch (apiError) {
+      if (
+        typeof window !== "undefined" &&
+        window.location &&
+        window.location.href.startsWith("http")
+      ) {
+        try {
+          // Fallback 至同源 HEAD 对时
+          const resp = await fetch(window.location.href, {
+            method: "HEAD",
+            cache: "no-store",
+            credentials: "omit",
+            signal: controller.signal,
+          });
+          const dateHeader = resp.headers.get("Date");
+          const t1 = Date.now();
+          if (resp.ok && dateHeader) {
+            const serverEpochMs = parseHttpDateToEpochMs(dateHeader);
+            const estimatedClientMid = (t0 + t1) / 2;
+            const offsetMs = Math.round(serverEpochMs - estimatedClientMid);
+            const rttMs = Math.max(0, t1 - t0);
+            return { offsetMs, rttMs, serverEpochMs, measuredAt: t1 };
+          }
+        } catch {
+          // ignore fallback error
+        }
+      }
+      throw apiError;
+    }
   } finally {
     clearTimeout(timeout);
   }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { NoiseStreamSnapshot } from "../services/noise/noiseStreamService";
 import {
@@ -6,6 +6,7 @@ import {
   restartNoiseStream,
   subscribeNoiseStream,
 } from "../services/noise/noiseStreamService";
+import { getAppSettings } from "../utils/appSettings";
 
 /**
  * 订阅环境噪音数据流的 Hook
@@ -13,15 +14,28 @@ import {
  */
 export function useNoiseStream(): NoiseStreamSnapshot & { retry: () => void } {
   const [snap, setSnap] = useState<NoiseStreamSnapshot>(() => getNoiseStreamSnapshot());
+  const lastUpdateRef = useRef<number>(0);
 
   useEffect(() => {
     let mounted = true;
     const update = () => {
       if (!mounted) return;
-      setSnap(getNoiseStreamSnapshot());
+
+      const now = Date.now();
+      const isEcoMode = getAppSettings().general.ecoMode ?? true;
+      const throttleMs = isEcoMode ? 500 : 0;
+
+      if (now - lastUpdateRef.current >= throttleMs) {
+        lastUpdateRef.current = now;
+        setSnap(getNoiseStreamSnapshot());
+      }
     };
     const unsubscribe = subscribeNoiseStream(update);
-    update();
+
+    // Force immediate first update
+    lastUpdateRef.current = Date.now();
+    setSnap(getNoiseStreamSnapshot());
+
     return () => {
       mounted = false;
       unsubscribe();

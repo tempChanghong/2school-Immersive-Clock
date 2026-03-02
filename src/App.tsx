@@ -6,6 +6,7 @@ import AnnouncementModal from "./components/AnnouncementModal";
 import { Confetti } from "./components/Confetti/Confetti";
 import { ClockPage } from "./pages/ClockPage/ClockPage";
 import { shouldShowAnnouncement } from "./utils/announcementStorage";
+import { getAppSettings } from "./utils/appSettings";
 import { hasSeenTour } from "./utils/tour";
 
 /**
@@ -73,6 +74,30 @@ export function App() {
       window.removeEventListener("tour:completed", onTourCompleted);
     };
   }, []); // 空依赖数组确保只在组件挂载时执行一次
+
+  // 处理 Eco Mode (低性能模式) 全局样式注入
+  useEffect(() => {
+    const applyEcoMode = () => {
+      try {
+        const isEco = getAppSettings().general.ecoMode ?? true;
+        document.body.classList.toggle("eco-mode", isEco);
+      } catch {
+        document.body.classList.toggle("eco-mode", true);
+      }
+    };
+
+    applyEcoMode();
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "AppSettings") {
+        applyEcoMode();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   return (
     <div className={`${styles.app} ${showEnterAnimation ? styles.enterAnimation : ""}`}>

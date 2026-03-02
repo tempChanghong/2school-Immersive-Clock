@@ -59,6 +59,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
   const dispatch = useAppDispatch();
 
   const [startupMode, setStartupMode] = useState<AppMode>("clock");
+  const [ecoMode, setEcoMode] = useState<boolean>(true);
 
   // 倒计时模式（重构）：'gaokao' | 'single' | 'multi'
   const [countdownMode, setCountdownMode] = useState<"gaokao" | "single" | "multi">("gaokao");
@@ -164,7 +165,9 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
   // 打开时优先从 AppSettings 读取上次选择的倒计时模式
   useEffect(() => {
     try {
-      setStartupMode(resolveStartupMode(getAppSettings().general.startup.initialMode));
+      const startup = getAppSettings().general.startup;
+      setStartupMode(resolveStartupMode(startup.initialMode));
+      setEcoMode(getAppSettings().general.ecoMode ?? true);
       const saved = getAppSettings().study.countdownMode;
       if (saved === "gaokao" || saved === "single" || saved === "multi") {
         setCountdownMode(saved);
@@ -440,7 +443,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
       dispatch({ type: "SET_STUDY_NUMERIC_FONT", payload: nextNumeric });
       dispatch({ type: "SET_STUDY_TEXT_FONT", payload: nextText });
 
-      updateGeneralSettings({ startup: { initialMode: startupMode } });
+      updateGeneralSettings({ startup: { initialMode: startupMode }, ecoMode });
 
       updateTimeSyncSettings((current) => ({
         enabled: timeSyncEnabled,
@@ -488,6 +491,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     textFontMode,
     textFontSelected,
     startupMode,
+    ecoMode,
     timeSyncEnabled,
     timeSyncProvider,
     timeSyncHttpDateUrl,
@@ -618,7 +622,16 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
             onChange={(v) => setStartupMode(v as AppMode)}
           />
         </FormRow>
-        <p className={styles.helpText}>该设置将在下次启动（或刷新页面）后生效。</p>
+        <FormRow gap="sm" align="center">
+          <FormCheckbox
+            label="低性能模式 (Eco Mode)"
+            checked={ecoMode}
+            onChange={(e) => setEcoMode(e.target.checked)}
+          />
+        </FormRow>
+        <p className={styles.helpText}>
+          该设置将在下次启动（或刷新页面）后生效。开启低性能模式可大幅降低 CPU 占用，但会关闭毛玻璃等高级特效，并降低部分图表的渲染频率。
+        </p>
       </FormSection>
 
       {/* 倒计时设置 */}

@@ -162,3 +162,16 @@ img[loading="lazy"] {
     transform: translateY(10px);
   }
 }
+
+/* 低性能模式 (Eco Mode) */
+body.eco-mode * {
+  /* 强制覆盖所有子元素的毛玻璃效果 */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.eco-mode :root,
+body.eco-mode {
+  /* 失去模糊后，增强半透明元素的背景不透明度以确保文字可读性 */
+  --hud-background: rgba(40, 40, 40, 0.95);
+}
