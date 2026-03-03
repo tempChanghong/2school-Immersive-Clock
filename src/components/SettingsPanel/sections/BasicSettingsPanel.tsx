@@ -524,6 +524,10 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
   /** 构建字体选择列表（函数级注释：合并已导入字体与内置字体，供下拉选择使用） */
   const builtInNumericFonts = useMemo(
     () => [
+      {
+        label: "Impact (醒目)",
+        value: '"Impact", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+      },
       { label: "Roboto Mono", value: "'Roboto Mono', monospace" },
       { label: "JetBrains Mono", value: "'JetBrains Mono', monospace" },
       { label: "Source Code Pro", value: "'Source Code Pro', monospace" },
@@ -536,6 +540,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
   );
   const builtInTextFonts = useMemo(
     () => [
+      { label: "Impact (醒目)", value: '"Impact", sans-serif' },
       { label: "Inter", value: "'Inter', sans-serif" },
       { label: "Segoe UI", value: "'Segoe UI', sans-serif" },
       { label: "Microsoft YaHei", value: "'Microsoft YaHei', sans-serif" },

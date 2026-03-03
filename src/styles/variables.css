@@ -13,7 +13,7 @@
   --placeholder-opacity: 0.6;
 
   /* 字体 */
-  --font-main: "Roboto Mono", monospace;
+  --font-main: "Impact", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --font-ui: "Inter", sans-serif;
 
   /* 尺寸变量 */

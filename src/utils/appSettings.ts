@@ -160,7 +160,7 @@ const DEFAULT_SETTINGS: AppSettings = {
       },
     },
     timeSync: {
-      enabled: false,
+      enabled: true,
       provider: "httpDate",
       httpDateUrl: "/",
       timeApiUrl: "",
@@ -168,7 +168,7 @@ const DEFAULT_SETTINGS: AppSettings = {
       ntpPort: 123,
       manualOffsetMs: 0,
       offsetMs: 0,
-      autoSyncEnabled: false,
+      autoSyncEnabled: true,
       autoSyncIntervalSec: 3600,
       lastSyncAt: 0,
       lastRttMs: undefined,
@@ -493,8 +493,6 @@ export function updateGeneralSettings(updates: DeepPartial<AppSettings["general"
     general: updates,
   });
 }
-
-
 
 export function updatePerformanceSettings(updates: DeepPartial<AppSettings["performance"]>): void {
   updateAppSettings({

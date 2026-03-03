@@ -14,7 +14,8 @@
 .time {
   font-family: var(--font-main);
   font-size: clamp(5rem, 15vw, 10rem);
-  font-weight: 700;
+  font-weight: 400; /* Adjusted for Impact */
+  letter-spacing: 0.05em;
   color: var(--primary-color);
   line-height: 1.2;
   margin-bottom: var(--spacing-md);
