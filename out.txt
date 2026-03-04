@@ -1,0 +1,28 @@
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mF:/WebstormProjects/Immersive-clock-main[39m
+
+ [33m鉂?[39m src/utils/__tests__/tourGuards.test.ts [2m ([22m[2m12 tests[22m [2m|[22m [31m9 failed[39m[2m)[22m[90m 67[2mms[22m[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m鍒囨崲鐩戞祴璁剧疆锛氭湭鍒囨崲鏃剁偣鍑讳笅涓€姝ヤ笉浼氳烦姝ワ紝骞惰Е鍙戣緟鍔╁垏鎹?[39m
+[31m     鈫?expected undefined to be type of 'function'[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m鍣煶鏍″噯锛氭湭鎿嶄綔鏃朵笉浼氳烦姝ワ紝骞惰Е鍙戣緟鍔╃偣鍑绘牎鍑嗘寜閽?[39m
+[31m     鈫?expected undefined to be type of 'function'[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m鎵撳紑鍘嗗彶璁板綍锛氭湭鎵撳紑寮圭獥鏃朵笉浼氳烦姝ワ紝骞惰Е鍙戣緟鍔╃偣鍑诲叆鍙?[39m
+[31m     鈫?expected undefined to be type of 'function'[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m閫€鍑哄巻鍙茬晫闈細鏈叧闂椂涓嶄細璺虫锛屽苟瑙﹀彂杈呭姪鐐瑰嚮鍏抽棴鎸夐挳[39m
+[31m     鈫?expected undefined to be type of 'function'[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m杩涘叆鑷範妯″紡锛氭湭鍒囨崲鏃剁偣鍑讳笅涓€姝ヤ笉浼氳烦姝ワ紝骞惰Е鍙戣緟鍔╁垏鎹?[39m
+[31m     鈫?expected undefined to be type of 'function'[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m杩涘叆鑷範妯″紡锛氬垏鎹㈡垚鍔熷悗鍏佽璺虫[39m
+[31m     鈫?Cannot read properties of undefined (reading 'popover')[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m杩涘叆鑷範妯″紡锛氱偣鍑烩€滃府鎴戝垏鎹⑩€濇垚鍔熷悗鎸夐挳鏂囨鏀逛负鈥滀笅涓€姝モ€?[39m
+[31m     鈫?Cannot read properties of undefined (reading 'popover')[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m鎵撳紑璁剧疆锛氭湭鎵撳紑鏃剁偣鍑讳笅涓€姝ヤ笉浼氳烦姝ワ紝骞惰Е鍙戣緟鍔╂墦寮€[39m
+[31m     鈫?Cannot read properties of undefined (reading 'popover')[39m
+[31m   [33m鉂?[31m src/utils/__tests__/tourGuards.test.ts[2m > [22mtour 瀹堝崼寮忎笅涓€姝?[2m > [22m淇濆瓨璁剧疆锛氱偣鍑诲畬鎴愪細鍏堣Е鍙戜繚瀛樻寜閽偣鍑诲啀缁撴潫[39m
+[31m     鈫?Cannot read properties of undefined (reading 'popover')[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m9 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 22:03:35
+[2m   Duration [22m 1.26s[2m (transform 88ms, setup 186ms, collect 48ms, tests 67ms, environment 577ms, prepare 122ms)[22m
+

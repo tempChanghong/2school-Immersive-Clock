@@ -140,7 +140,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   modifiedAt: Date.now(),
   general: {
     startup: {
-      initialMode: "clock",
+      initialMode: "study",
     },
     quote: {
       autoRefreshInterval: 600,
