@@ -28,6 +28,7 @@ export interface NoiseControlSettings {
   segmentMergeGapMs: number;
   maxSegmentsPerMin: number;
   alertSoundEnabled: boolean; // 超过阈值时播放提示音
+  microphoneDeviceId: string; // 指定麦克风采集设备 ID
 }
 
 const FIXED_NOISE_ANALYSIS_SETTINGS: Pick<
@@ -48,6 +49,7 @@ const DEFAULT_SETTINGS: NoiseControlSettings = {
   avgWindowSec: 1,
   ...FIXED_NOISE_ANALYSIS_SETTINGS,
   alertSoundEnabled: false,
+  microphoneDeviceId: "default",
 };
 
 /**
@@ -58,7 +60,7 @@ function applyFixedNoiseAnalysisSettings(settings: NoiseControlSettings): NoiseC
 }
 
 export function getNoiseControlSettings(): NoiseControlSettings {
-  return applyFixedNoiseAnalysisSettings(getAppSettings().noiseControl as NoiseControlSettings);
+  return applyFixedNoiseAnalysisSettings(getAppSettings().noiseControl as unknown as NoiseControlSettings);
 }
 
 export function saveNoiseControlSettings(settings: Partial<NoiseControlSettings>): void {

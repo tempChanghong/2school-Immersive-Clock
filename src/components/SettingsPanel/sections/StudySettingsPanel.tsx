@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 
 import { DEFAULT_NOISE_REPORT_RETENTION_DAYS } from "../../../constants/noiseReport";
 import { useAppState } from "../../../contexts/AppContext";
+import { useNoiseStream } from "../../../hooks/useNoiseStream";
 import { getAppSettings, updateNoiseSettings } from "../../../utils/appSettings";
 import { pushErrorCenterRecord } from "../../../utils/errorCenter";
 import { logger } from "../../../utils/logger";
@@ -27,6 +28,7 @@ import {
   FormCheckbox,
   FormInput,
   FormSlider,
+  FormSelect,
   FormRow,
 } from "../../FormComponents";
 import { VolumeIcon, VolumeMuteIcon } from "../../Icons";
@@ -90,6 +92,11 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
   const [draftAlertSoundEnabled, setDraftAlertSoundEnabled] = useState<boolean>(
     initialControl.alertSoundEnabled ?? false
   );
+  const [draftMicrophoneDeviceId, setDraftMicrophoneDeviceId] = useState<string>(
+    initialControl.microphoneDeviceId || "default"
+  );
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const noiseStream = useNoiseStream();
 
   const openMessagePopup = useCallback(
     (detail: { type: "general" | "error"; title: string; message: string }) => {
@@ -111,6 +118,26 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
     [study.errorPopupEnabled]
   );
 
+  // 自动获取麦克风列表
+  useEffect(() => {
+    let active = true;
+    const fetchDevices = async () => {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        if (active) {
+          setAudioDevices(devices.filter((d) => d.kind === "audioinput"));
+        }
+      } catch (e) {
+        logger.warn("Failed to enumerate audio devices:", e);
+      }
+    };
+    void fetchDevices();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // 初始化噪音设置为草稿
   useEffect(() => {
     const noiseSettings = getAppSettings().noiseControl;
@@ -125,6 +152,7 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
     setDraftShowRealtimeDb(currentControl.showRealtimeDb);
     setDraftAvgWindowSec(currentControl.avgWindowSec);
     setDraftAlertSoundEnabled(currentControl.alertSoundEnabled ?? false);
+    setDraftMicrophoneDeviceId(currentControl.microphoneDeviceId || "default");
   }, []);
 
   useEffect(() => {
@@ -326,6 +354,7 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
         showRealtimeDb: draftShowRealtimeDb,
         avgWindowSec: draftAvgWindowSec,
         alertSoundEnabled: draftAlertSoundEnabled,
+        microphoneDeviceId: draftMicrophoneDeviceId,
       });
     });
   }, [
@@ -339,6 +368,7 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
     draftShowRealtimeDb,
     draftAvgWindowSec,
     draftAlertSoundEnabled,
+    draftMicrophoneDeviceId,
   ]);
 
   // 课表重置功能已迁移到基础设置面板
@@ -381,6 +411,52 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
             <p className={styles.helpText} style={{ marginTop: 4 }}>
               数值越大，数字跳动越平缓。
             </p>
+          </div>
+        </FormRow>
+
+        <FormRow gap="sm" align="start">
+          <div style={{ flex: 1 }}>
+            <FormSelect
+              label="采集麦克风"
+              value={draftMicrophoneDeviceId}
+              onChange={(e) => setDraftMicrophoneDeviceId(e.target.value)}
+              options={[
+                { value: "default", label: "系统默认麦克风" },
+                ...audioDevices.map((d) => ({
+                  value: d.deviceId,
+                  label: d.label || `麦克风 (${d.deviceId.slice(0, 5)}...)`,
+                })),
+              ]}
+            />
+            <div style={{ marginTop: 8 }}>
+              <div
+                style={{
+                  height: 8,
+                  backgroundColor: "var(--bg-secondary)",
+                  borderRadius: 4,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.min(100, Math.max(0, ((noiseStream.realtimeDisplayDb - 20) / 80) * 100))}%`,
+                    backgroundColor:
+                      noiseStream.realtimeDisplayDb > draftMaxNoiseLevel
+                        ? "var(--danger-color)"
+                        : "var(--accent-color, #4A90E2)",
+                    transition: "width 0.1s ease-out, background-color 0.2s",
+                  }}
+                />
+              </div>
+              <p
+                className={styles.helpText}
+                style={{ marginTop: 4, display: "flex", justifyContent: "space-between" }}
+              >
+                <span>实时音量测试</span>
+                <span>{noiseStream.realtimeDisplayDb.toFixed(1)} dB</span>
+              </p>
+            </div>
           </div>
         </FormRow>
 

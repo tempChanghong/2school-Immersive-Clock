@@ -9,6 +9,7 @@ export interface NoiseCaptureOptions {
   highpassHz?: number;
   lowpassHz?: number;
   analyserFftSize?: number;
+  deviceId?: string;
 }
 
 export interface NoiseCaptureSession {
@@ -21,7 +22,7 @@ export interface NoiseCaptureSession {
   lowpass: BiquadFilterNode;
 }
 
-const DEFAULT_OPTIONS: Required<NoiseCaptureOptions> = {
+const DEFAULT_OPTIONS: Required<Omit<NoiseCaptureOptions, "deviceId">> = {
   highpassHz: 80,
   lowpassHz: 8000,
   analyserFftSize: 2048,
@@ -46,11 +47,18 @@ export async function startNoiseCapture(
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-      },
+      audio: opt.deviceId
+        ? {
+            deviceId: { exact: opt.deviceId },
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        : {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
       video: false,
     });
 

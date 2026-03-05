@@ -21,6 +21,7 @@ export interface NoiseStreamSnapshot {
   maxLevelDb: number;
   showRealtimeDb: boolean;
   alertSoundEnabled: boolean;
+  microphoneDeviceId: string;
   ringBuffer: NoiseRealtimePoint[];
   latestSlice: NoiseSliceSummary | null;
 }
@@ -88,6 +89,7 @@ let snapshot: NoiseStreamSnapshot = {
   maxLevelDb: getNoiseControlSettings().maxLevelDb,
   showRealtimeDb: getNoiseControlSettings().showRealtimeDb,
   alertSoundEnabled: getNoiseControlSettings().alertSoundEnabled ?? false,
+  microphoneDeviceId: getNoiseControlSettings().microphoneDeviceId || "default",
   ringBuffer: [],
   latestSlice: null,
 };
@@ -111,6 +113,7 @@ let windowSamples: { t: number; v: number }[] = [];
 let baselineRms = getAppSettings().noiseControl.baselineRms;
 let displayBaselineDb = getNoiseControlSettings().baselineDb ?? 40;
 let avgWindowSec = Math.max(0.2, getNoiseControlSettings().avgWindowSec);
+let microphoneDeviceId = getNoiseControlSettings().microphoneDeviceId || "default";
 
 let frameMs = getNoiseControlSettings().frameMs;
 let sliceSec = getNoiseControlSettings().sliceSec;
@@ -195,6 +198,7 @@ async function hardStart() {
       analyserFftSize: 2048,
       highpassHz: 80,
       lowpassHz: 8000,
+      deviceId: microphoneDeviceId && microphoneDeviceId !== "default" ? microphoneDeviceId : undefined,
     });
     captureCleanup = () => stopNoiseCapture(capture);
 
@@ -290,6 +294,10 @@ function ensureSettingsListeners() {
           typeof next?.alertSoundEnabled === "boolean"
             ? next.alertSoundEnabled
             : (fallback.alertSoundEnabled ?? false);
+        const nextMicrophoneDeviceId =
+          typeof next?.microphoneDeviceId === "string"
+            ? next.microphoneDeviceId
+            : fallback.microphoneDeviceId || "default";
         const nextDisplayBaselineDb =
           typeof next?.baselineDb === "number" && Number.isFinite(next.baselineDb)
             ? next.baselineDb
@@ -321,6 +329,7 @@ function ensureSettingsListeners() {
           maxLevelDb: nextMaxLevelDb,
           showRealtimeDb: nextShowRealtimeDb,
           alertSoundEnabled: nextAlertSoundEnabled,
+          microphoneDeviceId: nextMicrophoneDeviceId,
         };
 
         avgWindowSec = nextAvgWindowSec;
@@ -331,13 +340,15 @@ function ensureSettingsListeners() {
           nextSliceSec !== sliceSec ||
           nextScoreThresholdDbfs !== scoreThresholdDbfs ||
           nextSegmentMergeGapMs !== segmentMergeGapMs ||
-          nextMaxSegmentsPerMin !== maxSegmentsPerMin;
+          nextMaxSegmentsPerMin !== maxSegmentsPerMin ||
+          nextMicrophoneDeviceId !== microphoneDeviceId;
 
         frameMs = nextFrameMs;
         sliceSec = nextSliceSec;
         scoreThresholdDbfs = nextScoreThresholdDbfs;
         segmentMergeGapMs = nextSegmentMergeGapMs;
         maxSegmentsPerMin = nextMaxSegmentsPerMin;
+        microphoneDeviceId = nextMicrophoneDeviceId;
 
         if (shouldRestart && running) {
           void restartNoiseStream();
@@ -352,9 +363,11 @@ function ensureSettingsListeners() {
           maxLevelDb: s.maxLevelDb,
           showRealtimeDb: s.showRealtimeDb,
           alertSoundEnabled: s.alertSoundEnabled ?? false,
+          microphoneDeviceId: s.microphoneDeviceId || "default",
         };
         avgWindowSec = Math.max(0.2, s.avgWindowSec);
         displayBaselineDb = s.baselineDb ?? 40;
+        microphoneDeviceId = s.microphoneDeviceId || "default";
         frameMs = s.frameMs;
         sliceSec = s.sliceSec;
         scoreThresholdDbfs = s.scoreThresholdDbfs ?? DEFAULT_NOISE_SCORE_OPTIONS.scoreThresholdDbfs;
