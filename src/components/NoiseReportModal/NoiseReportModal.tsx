@@ -12,6 +12,7 @@ export interface NoiseReportPeriod {
   name: string;
   start: Date;
   end: Date;
+  ranges?: { start: Date; end: Date }[]; // 新增：支持不连续时间段的聚合
 }
 
 interface NoiseReportModalProps {
@@ -201,10 +202,14 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
   const [isGridSingleColumn, setIsGridSingleColumn] = useState(false);
   const [tick, setTick] = useState(0);
 
-  // 动画状态
   const [isLoaded, setIsLoaded] = useState(false);
   const [showMainChart, setShowMainChart] = useState(false);
   const [showMoreStats, setShowMoreStats] = useState(false);
+  const [exportState, setExportState] = useState<"idle" | "preparing" | "rendering" | "saving">(
+    "idle"
+  );
+  const exportRef = useRef<HTMLDivElement>(null); // 导出容器引用
+
   const [isMainChartCombined, setIsMainChartCombined] = useState(() => {
     try {
       const saved = localStorage.getItem("noise-report.is-main-chart-combined");
@@ -276,18 +281,32 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
 
   const periodDurationMs = useMemo(() => {
     if (!period) return 0;
+    if (period.ranges && period.ranges.length > 0) {
+      return period.ranges.reduce(
+        (acc, r) => acc + Math.max(0, r.end.getTime() - r.start.getTime()),
+        0
+      );
+    }
     return Math.max(0, period.end.getTime() - period.start.getTime());
   }, [period]);
 
   const report = useMemo(() => {
     void tick;
     if (!period) return null;
-    const startTs = period.start.getTime();
-    const endTs = period.end.getTime();
     const thresholdDb = getNoiseControlSettings().maxLevelDb;
 
+    // 如果传入了多个时间段，则组合其时间边界；否则单用起止时间
+    const ranges =
+      period.ranges && period.ranges.length > 0
+        ? period.ranges.map((r) => ({ startTs: r.start.getTime(), endTs: r.end.getTime() }))
+        : [{ startTs: period.start.getTime(), endTs: period.end.getTime() }];
+
+    const minStartTs = Math.min(...ranges.map((r) => r.startTs));
+    const maxEndTs = Math.max(...ranges.map((r) => r.endTs));
+
+    // 筛选出与【任意一个有效范围】有交集的 slices
     const slices = readNoiseSlices()
-      .filter((s) => s.end >= startTs && s.start <= endTs)
+      .filter((s) => ranges.some((r) => s.end >= r.startTs && s.start <= r.endTs))
       .sort((a, b) => a.start - b.start);
 
     let totalMs = 0;
@@ -324,15 +343,26 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
 
     const series: { t: number; start: number; v: number; score: number; events: number }[] = [];
 
+    // 遍历每一个分片，计算其在所有有效 time ranges 的重叠面积总和
     for (const s of slices) {
-      const overlapStart = Math.max(startTs, s.start);
-      const overlapEnd = Math.min(endTs, s.end);
-      const overlapMs = overlapEnd - overlapStart;
-      const sliceMs = Math.max(1, s.end - s.start);
-      if (overlapMs <= 0) continue;
+      let overlapMsSum = 0;
+      let minOverlapStart = Infinity;
+      let maxOverlapEnd = -Infinity;
 
-      const ratio = overlapMs / sliceMs;
-      // 使用有效采样时长（sampledDurationMs）作为权重基准，排除采集间隙
+      for (const r of ranges) {
+        const overlapStart = Math.max(r.startTs, s.start);
+        const overlapEnd = Math.min(r.endTs, s.end);
+        if (overlapEnd > overlapStart) {
+          overlapMsSum += overlapEnd - overlapStart;
+          if (overlapStart < minOverlapStart) minOverlapStart = overlapStart;
+          if (overlapEnd > maxOverlapEnd) maxOverlapEnd = overlapEnd;
+        }
+      }
+
+      if (overlapMsSum <= 0) continue;
+
+      const sliceMs = Math.max(1, s.end - s.start);
+      const ratio = overlapMsSum / sliceMs;
       const effectiveOverlapMs = (s.raw.sampledDurationMs ?? sliceMs) * ratio;
 
       totalMs += effectiveOverlapMs;
@@ -349,7 +379,6 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
       sumTimePenalty += s.scoreDetail.timePenalty * effectiveOverlapMs;
       sumSegmentPenalty += s.scoreDetail.segmentPenalty * effectiveOverlapMs;
 
-      // 分布统计
       const db = s.display.avgDb;
       if (db < 45) distribution.quiet += effectiveOverlapMs;
       else if (db < 60) distribution.normal += effectiveOverlapMs;
@@ -357,8 +386,9 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
       else distribution.severe += effectiveOverlapMs;
 
       series.push({
-        t: Math.min(Math.max(s.end, startTs), endTs),
-        start: Math.max(s.start, startTs),
+        // 在绘图时，为了能连点跨出连续段，选取重叠起始的最值进行投影
+        t: Math.min(Math.max(s.end, minStartTs), maxEndTs),
+        start: Math.max(s.start, minStartTs),
         v: s.display.avgDb,
         score: s.score,
         events: s.raw.segmentCount,
@@ -629,7 +659,7 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
         maxBucketEvents: 1,
         xTicks: [] as { x: number; label: string }[],
         yTicks: [] as { y: number; label: string }[],
-        eventTicks: [] as { y: number; label: string }[],
+        eventTicks: [] as { y: number; label: string; uniqueId: string }[],
       };
     }
 
@@ -722,9 +752,10 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
 
     const maxEvents = Math.max(1, ...report.series.map((s) => s.events));
     const eventTickVals = [0, maxEvents / 2, maxEvents];
-    const eventTicks = eventTickVals.map((v) => ({
+    const eventTicks = eventTickVals.map((v, idx) => ({
       y: height - padding - (v / maxEvents) * (height - padding * 2),
       label: Math.round(v).toString(),
+      uniqueId: `${idx}-${Math.round(v)}`,
     }));
 
     return {
@@ -749,6 +780,73 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
     return { score: s, level: getScoreLevelText(s) };
   }, [report]);
 
+  const handleExportPDF = async () => {
+    if (!period || exportState !== "idle") return;
+
+    // 阶段1：准备数据并挂载未动画的离屏 DOM
+    setExportState("preparing");
+
+    try {
+      // 保证组件由于 state 改变至少完成一次 commit
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const { default: html2canvas } = await import("html2canvas");
+      const { jsPDF } = await import("jspdf");
+
+      const pdfContainer = document.getElementById("pdf-export-container");
+      if (!pdfContainer) throw new Error("PDF container not found");
+
+      // 阶段2：让离屏 DOM 在宏任务中彻底排版渲染完毕
+      setExportState("rendering");
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const canvas = await html2canvas(pdfContainer, {
+        scale: 3, // 提高至 3 倍分辨率，满足专业打印锐度
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#FFFFFF", // 正式报告采用纯白底色
+      });
+
+      // 阶段3：处理图像并生成 PDF 文件
+      setExportState("saving");
+      // 为了让 React 更新 "保存中..." 的文案，再切一次事件循环
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "p",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`噪音自习报告_${period.name}_${new Date().getTime()}.pdf`);
+    } catch (err) {
+      console.error("Failed to export PDF:", err);
+      alert("导出PDF失败，请重试");
+    } finally {
+      setExportState("idle");
+    }
+  };
+
+  const isExporting = exportState !== "idle";
+
+  const getExportText = () => {
+    switch (exportState) {
+      case "preparing":
+        return "正在准备数据...";
+      case "rendering":
+        return "正在渲染高清图表...";
+      case "saving":
+        return "正在生成 PDF 文件...";
+      default:
+        return "导出为 PDF";
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -757,6 +855,14 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
       maxWidth="xxl"
       footer={
         <div className={styles.footer}>
+          <FormButton
+            variant="secondary"
+            size="sm"
+            onClick={handleExportPDF}
+            disabled={isExporting}
+          >
+            {getExportText()}
+          </FormButton>
           {onBack ? (
             <FormButton variant="primary" size="sm" onClick={onBack}>
               返回
@@ -769,6 +875,368 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
         </div>
       }
     >
+      {/* 离屏 PDF 专业报表渲染层（仅供截屏抓取，彻底脱走 UI 动画与视觉杂扰） */}
+      <div
+        id="pdf-export-container"
+        ref={exportRef}
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: "0",
+          width: "1000px", // 适合 A4 比例宽幅
+          padding: "40px",
+          backgroundColor: "#ffffff",
+          color: "#333333",
+          fontFamily: "sans-serif",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "40px",
+            borderBottom: "2px solid #333",
+            paddingBottom: "20px",
+          }}
+        >
+          <h2 style={{ fontSize: "28px", margin: "0 0 10px 0", color: "#111" }}>天津市第二中学</h2>
+          <h3 style={{ fontSize: "22px", margin: "0", color: "#444" }}>
+            沉浸式自习环境 - 噪音数据专项测评报告
+          </h3>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "30px",
+            fontSize: "14px",
+            color: "#666",
+          }}
+        >
+          <div>
+            <strong>自习名称：</strong>
+            {period ? period.name : "综合报告"}
+          </div>
+          <div>
+            <strong>统计范围：</strong>
+            {period ? `${period.start.toLocaleString()} 至 ${period.end.toLocaleString()}` : "—"}
+          </div>
+          <div>
+            <strong>生成时间：</strong>
+            {new Date().toLocaleString()}
+          </div>
+        </div>
+
+        {report && (
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "20px",
+                marginBottom: "40px",
+              }}
+            >
+              <div
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: "8px",
+                  borderLeft: "4px solid #1976d2",
+                }}
+              >
+                <div style={{ fontSize: "14px", color: "#666", marginBottom: "5px" }}>
+                  环境纪律得分
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: "bold", color: "#1976d2" }}>
+                  {Math.round(report.avgScore)} 分 ({getScoreLevelText(Math.round(report.avgScore))}
+                  )
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: "8px",
+                  borderLeft: "4px solid #388e3c",
+                }}
+              >
+                <div style={{ fontSize: "14px", color: "#666", marginBottom: "5px" }}>
+                  有效平均音量
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: "bold", color: "#388e3c" }}>
+                  {report.avgDb.toFixed(1)} dB
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: "8px",
+                  borderLeft: "4px solid #d32f2f",
+                }}
+              >
+                <div style={{ fontSize: "14px", color: "#666", marginBottom: "5px" }}>
+                  违规打断次数
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: "bold", color: "#d32f2f" }}>
+                  {report.segmentCount} 次
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: "8px",
+                  borderLeft: "4px solid #fbc02d",
+                }}
+              >
+                <div style={{ fontSize: "14px", color: "#666", marginBottom: "5px" }}>
+                  峰值噪音点
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: "bold", color: "#f57f17" }}>
+                  {report.maxDb.toFixed(1)} dB
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: "8px",
+                  borderLeft: "4px solid #7b1fa2",
+                }}
+              >
+                <div style={{ fontSize: "14px", color: "#666", marginBottom: "5px" }}>
+                  超阈值累计时长
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: "bold", color: "#7b1fa2" }}>
+                  {formatDuration(report.overDurationMs)}
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: "8px",
+                  borderLeft: "4px solid #0097a7",
+                }}
+              >
+                <div style={{ fontSize: "14px", color: "#666", marginBottom: "5px" }}>
+                  数据采集覆盖率
+                </div>
+                <div style={{ fontSize: "24px", fontWeight: "bold", color: "#0097a7" }}>
+                  {periodDurationMs > 0
+                    ? ((report.totalMs / periodDurationMs) * 100).toFixed(1)
+                    : "0.0"}
+                  %
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <h4
+                style={{
+                  fontSize: "18px",
+                  borderBottom: "1px solid #ddd",
+                  paddingBottom: "10px",
+                  marginBottom: "20px",
+                }}
+              >
+                自习全程 - 核心噪音位准走势
+              </h4>
+              <div
+                style={{
+                  position: "relative",
+                  height: `${chart.height}px`,
+                  width: "100%",
+                  backgroundColor: "#fafafa",
+                  borderRadius: "4px",
+                  border: "1px solid #eee",
+                  overflow: "hidden",
+                }}
+              >
+                {report.series.length >= 2 ? (
+                  <svg
+                    width="100%"
+                    height="100%"
+                    viewBox={`0 0 ${chart.width} ${chart.height}`}
+                    preserveAspectRatio="none"
+                  >
+                    <defs>
+                      <linearGradient id="pdfNoiseAreaGradientWarning" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#d32f2f" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#d32f2f" stopOpacity={0} />
+                      </linearGradient>
+                      <mask id="pdfLineNormalMask">
+                        {chart.maskRects.map((r, i) => (
+                          <rect
+                            key={i}
+                            x={r.x}
+                            y={chart.thresholdY}
+                            width={r.w}
+                            height={Math.max(0, chart.height - chart.thresholdY)}
+                            fill="white"
+                          />
+                        ))}
+                      </mask>
+                      <mask id="pdfLineWarningMask">
+                        {chart.maskRects.map((r, i) => (
+                          <rect
+                            key={i}
+                            x={r.x}
+                            y={0}
+                            width={r.w}
+                            height={Math.max(0, chart.thresholdY)}
+                            fill="white"
+                          />
+                        ))}
+                      </mask>
+                      <mask id="pdfWarningAreaMask">
+                        <rect
+                          x="0"
+                          y="0"
+                          width={chart.width}
+                          height={chart.thresholdY}
+                          fill="white"
+                        />
+                      </mask>
+                    </defs>
+
+                    {/* 阈值线 */}
+                    <line
+                      x1={chart.padding}
+                      y1={chart.thresholdY}
+                      x2={chart.width - chart.padding}
+                      y2={chart.thresholdY}
+                      stroke="#f44336"
+                      strokeWidth="2"
+                      strokeDasharray="5,5"
+                    />
+                    <text
+                      x={chart.width - chart.padding}
+                      y={chart.thresholdY - 5}
+                      fill="#f44336"
+                      fontSize="12"
+                      textAnchor="end"
+                    >
+                      违规红线 ({report.thresholdDb.toFixed(1)} dB)
+                    </text>
+
+                    {/* Y 轴刻度 */}
+                    {chart.yTicks.map((t) => (
+                      <g key={`pdf-y-${t.label}`}>
+                        <line
+                          x1={chart.padding}
+                          x2={chart.width - chart.padding}
+                          y1={t.y}
+                          y2={t.y}
+                          stroke="#eee"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={chart.padding - 8}
+                          y={t.y + 4}
+                          fill="#999"
+                          fontSize="12"
+                          textAnchor="end"
+                        >
+                          {t.label}
+                        </text>
+                      </g>
+                    ))}
+
+                    {/* 超标区域蒙版填充 (去除过渡动画，静态写死) */}
+                    <path
+                      d={chart.areaPath}
+                      fill="url(#pdfNoiseAreaGradientWarning)"
+                      mask="url(#pdfWarningAreaMask)"
+                    />
+
+                    {/* X 轴刻度 */}
+                    {chart.xTicks.map((t, idx) => (
+                      <text
+                        key={`pdf-x-${idx}`}
+                        x={t.x}
+                        y={chart.height - 10}
+                        fill="#666"
+                        fontSize="12"
+                        textAnchor={
+                          idx === 0 ? "start" : idx === chart.xTicks.length - 1 ? "end" : "middle"
+                        }
+                      >
+                        {t.label}
+                      </text>
+                    ))}
+
+                    {/* 正常波段线 */}
+                    <path
+                      d={chart.path}
+                      stroke="#1976d2"
+                      strokeWidth="2.5"
+                      fill="none"
+                      mask="url(#pdfLineNormalMask)"
+                    />
+
+                    {/* 超标波段线 */}
+                    <path
+                      d={chart.path}
+                      stroke="#d32f2f"
+                      strokeWidth="2.5"
+                      fill="none"
+                      mask="url(#pdfLineWarningMask)"
+                    />
+                  </svg>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: "100%",
+                      color: "#999",
+                    }}
+                  >
+                    数据不足无法绘制图形
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontSize: "14px",
+                color: "#666",
+                lineHeight: "1.6",
+                backgroundColor: "#fff8e1",
+                padding: "15px",
+                borderLeft: "4px solid #ffb300",
+                borderRadius: "4px",
+              }}
+            >
+              <strong>纪律特征简评：</strong>
+              {report.scoreText}{" "}
+              {report.sustainedPenalty > 0.4
+                ? "且检测到高度密集的持续性讲空话/背景噪杂情况，时段持续扣分比重极高。"
+                : ""}
+            </div>
+          </>
+        )}
+
+        <div
+          style={{
+            marginTop: "50px",
+            paddingTop: "20px",
+            borderTop: "1px solid #eee",
+            textAlign: "right",
+            fontSize: "12px",
+            color: "#bbb",
+          }}
+        >
+          数据自动采集自 Immersive Clock 系统端点
+        </div>
+      </div>
+
       <div className={styles.container}>
         <div className={styles.section}>
           <h4 className={styles.sectionTitle}>报告概览</h4>
@@ -1219,7 +1687,7 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
                 >
                   {smallChart.eventTicks.map((t) => (
                     <line
-                      key={`ey-${t.label}`}
+                      key={`ey-${t.uniqueId}`}
                       x1={smallChart.padding}
                       x2={smallChart.width - smallChart.padding}
                       y1={t.y}

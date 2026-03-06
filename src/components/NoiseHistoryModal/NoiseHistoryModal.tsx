@@ -34,6 +34,9 @@ const NoiseHistoryModal: React.FC<NoiseHistoryModalProps> = ({ isOpen, onClose, 
   const [customError, setCustomError] = useState<string | null>(null);
   const [customOpen, setCustomOpen] = useState(false);
 
+  // 新增：多选组合状态
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     if (!isOpen) return;
     const unsubscribe = subscribeNoiseSlicesUpdated(() => setTick((t) => t + 1));
@@ -133,10 +136,34 @@ const NoiseHistoryModal: React.FC<NoiseHistoryModalProps> = ({ isOpen, onClose, 
         <FormSection title={`历史记录（最近${retentionDays}天）`}>
           <div className={styles.note}>
             数据来源：噪音切片摘要（按“历史保存天数”保存，且会受本地容量限制自动裁剪）。
+            <br />
+            您可以勾选多个独立的历史记录，并在下方点击生成包含它们所有数据的“综合报告”。
           </div>
 
           <div className={styles.list} aria-live="polite">
             <div className={styles.headerRow}>
+              <div
+                className={styles.colCheck}
+                style={{
+                  width: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={items.length > 0 && selectedIds.size === items.length}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedIds(new Set(items.map((i) => i.period.id)));
+                    } else {
+                      setSelectedIds(new Set());
+                    }
+                  }}
+                  title="全选/取消全选"
+                />
+              </div>
               <div className={styles.colName}>名称</div>
               <div className={styles.colScore}>评分</div>
               <div className={styles.colTime}>时间</div>
@@ -148,6 +175,29 @@ const NoiseHistoryModal: React.FC<NoiseHistoryModalProps> = ({ isOpen, onClose, 
             ) : (
               items.map((item) => (
                 <div key={item.period.id} className={styles.dataRow}>
+                  <div
+                    className={styles.colCheck}
+                    style={{
+                      width: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(item.period.id)}
+                      onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) {
+                          next.add(item.period.id);
+                        } else {
+                          next.delete(item.period.id);
+                        }
+                        setSelectedIds(next);
+                      }}
+                    />
+                  </div>
                   <div className={styles.colName}>{item.period.name}</div>
                   <div className={styles.colScore}>
                     {item.avgScore === null ? "—" : item.avgScore.toFixed(1)}
@@ -175,6 +225,45 @@ const NoiseHistoryModal: React.FC<NoiseHistoryModalProps> = ({ isOpen, onClose, 
               ))
             )}
           </div>
+
+          {/* 底部批量操作区 */}
+          {selectedIds.size > 0 && (
+            <div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
+              <FormButton
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  const selectedItems = items.filter((i) => selectedIds.has(i.period.id));
+                  if (selectedItems.length === 0) return;
+
+                  // 对于只有一条的数据，回退为普通详情查看
+                  if (selectedItems.length === 1) {
+                    onViewDetail(selectedItems[0].period);
+                    return;
+                  }
+
+                  // 对于多条数据，将它们拼接成多 time ranges 聚合对象
+                  // 我们取所有片段时间组合中的最早和最晚作为 display 的总体起止点
+                  const ranges = selectedItems.map((i) => ({
+                    start: i.period.start,
+                    end: i.period.end,
+                  }));
+                  const overallStart = new Date(Math.min(...ranges.map((r) => r.start.getTime())));
+                  const overallEnd = new Date(Math.max(...ranges.map((r) => r.end.getTime())));
+
+                  onViewDetail({
+                    id: `combined-${Date.now()}`,
+                    name: `多段综合报告 (${selectedItems.length}节)`,
+                    start: overallStart,
+                    end: overallEnd,
+                    ranges: ranges,
+                  });
+                }}
+              >
+                生成组合报告 ({selectedIds.size} 项)
+              </FormButton>
+            </div>
+          )}
 
           <details
             className={styles.customDetails}
