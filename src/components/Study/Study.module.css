@@ -32,6 +32,27 @@
   z-index: 0;
 }
 
+/* 动态噪音警示边缘光晕背景（通过 translateZ(0) 提升为独立合成层） */
+.noiseWarningOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(255, 76, 76, 0.1) 70%,
+    rgba(255, 76, 76, 0.4) 95%,
+    rgba(255, 76, 76, 0.6) 100%
+  );
+  pointer-events: none; /* 绝对不阻挡点击事件 */
+  z-index: 100; /* 需要在容器大部分层内容之上（非弹窗），但保持不挡点击 */
+  will-change: opacity;
+  transform: translateZ(0); /* 开启硬件加速（低平台核显优化） */
+  transition: opacity 0.5s ease-out; /* 丝滑过渡 */
+}
+
 /* 原本的 topBar 现作为备用 fallback 使用流式布局 */
 .topBar {
   display: flex;

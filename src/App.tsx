@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import styles from "./App.module.css";
 import AnnouncementModal from "./components/AnnouncementModal";
 import { Confetti } from "./components/Confetti/Confetti";
+import { useNoiseStream } from "./hooks/useNoiseStream";
 import { ClockPage } from "./pages/ClockPage/ClockPage";
 import { shouldShowAnnouncement } from "./utils/announcementStorage";
 import { getAppSettings } from "./utils/appSettings";
@@ -18,6 +19,9 @@ export function App() {
   const [showEnterAnimation, setShowEnterAnimation] = useState(false);
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showTourConfetti, setShowTourConfetti] = useState(false);
+
+  // 全局噪音流：用于驱动全局动态警示边缘光晕
+  const noiseStream = useNoiseStream();
 
   /**
    * 设置进入动画和公告弹窗
@@ -99,8 +103,24 @@ export function App() {
     };
   }, []);
 
+  // 计算全局动态警示遮罩透明度
+  const globalWarningOpacity = (() => {
+    if (!noiseStream || noiseStream.status === "quiet" || noiseStream.status === "initializing")
+      return 0;
+    const threshold = noiseStream.maxLevelDb;
+    const current = noiseStream.realtimeDisplayDb;
+    // 逼近阈值 - 5dB 时开始泛红
+    if (current <= threshold - 5) return 0;
+    const overflow = current - (threshold - 5);
+    const maxOverflow = 15;
+    return Math.min(0.6, (overflow / maxOverflow) * 0.6);
+  })();
+
   return (
     <div className={`${styles.app} ${showEnterAnimation ? styles.enterAnimation : ""}`}>
+      {/* 全局边缘动态红光警示蒙版（GPU加速合成图层） */}
+      <div className={styles.noiseWarningOverlayGlobal} style={{ opacity: globalWarningOpacity }} />
+
       <Routes>
         <Route path="/" element={<ClockPage />} />
         <Route path="*" element={<ClockPage />} />

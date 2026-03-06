@@ -86,3 +86,24 @@
     }
   }
 }
+
+/* 全局动态噪音警示边缘光晕背景（通过 translateZ(0) 提升为独立合成层） */
+.noiseWarningOverlayGlobal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(255, 76, 76, 0.1) 75%,
+    rgba(255, 76, 76, 0.4) 95%,
+    rgba(255, 76, 76, 0.6) 100%
+  );
+  pointer-events: none; /* 绝对不阻挡点击事件 */
+  z-index: 9999; /* 覆盖在所有页面框架之上，但不一定遮住弹窗 */
+  will-change: opacity;
+  transform: translateZ(0); /* 开启硬件加速（低平台核显优化） */
+  transition: opacity 0.5s ease-out; /* 丝滑过渡 */
+}

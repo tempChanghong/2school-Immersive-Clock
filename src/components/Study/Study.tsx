@@ -40,7 +40,7 @@ export function Study() {
   const lastForecastPopupPeriodIdRef = useRef<string | null>(null);
 
   // 背景设置
-  const [backgroundSettings, setBackgroundSettings] = useState(readStudyBackground());
+  const [_backgroundSettings, setBackgroundSettings] = useState(readStudyBackground());
 
   // 轮播：容器与尺寸测量
   const countdownRef = useRef<HTMLDivElement | null>(null);
@@ -468,7 +468,9 @@ export function Study() {
       <div className={styles.widgetsColumn}>
         {display.showCountdown && (
           <div
-            className={`${styles.widgetBox} ${study.cardStyleEnabled !== false ? styles.moduleCard : ""}`}
+            className={`${styles.widgetBox} ${
+              study.cardStyleEnabled !== false ? styles.moduleCard : ""
+            }`}
             data-tour="countdown-widget"
           >
             <div className={styles.countdownCarousel} ref={countdownRef} aria-live="polite">

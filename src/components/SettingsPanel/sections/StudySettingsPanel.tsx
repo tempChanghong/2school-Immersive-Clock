@@ -123,7 +123,8 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
     let active = true;
     const fetchDevices = async () => {
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop()); // 立即释放，防止设备锁定
         const devices = await navigator.mediaDevices.enumerateDevices();
         if (active) {
           setAudioDevices(devices.filter((d) => d.kind === "audioinput"));
@@ -137,6 +138,111 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
       active = false;
     };
   }, []);
+
+  const [isAutoDetecting, setIsAutoDetecting] = useState(false);
+  const handleAutoDetectMicrophone = useCallback(async () => {
+    setIsAutoDetecting(true);
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter((d) => d.kind === "audioinput");
+      if (audioInputs.length === 0) {
+        openMessagePopup({
+          type: "general",
+          title: "检测失败",
+          message: "未找到任何麦克风设备",
+        });
+        return;
+      }
+
+      const audioContextCtor = window as unknown as {
+        AudioContext?: typeof AudioContext;
+        webkitAudioContext?: typeof AudioContext;
+      };
+      const Ctor = audioContextCtor.AudioContext || audioContextCtor.webkitAudioContext;
+      if (!Ctor) {
+        logger.warn("当前环境不支持 WebAudio");
+        return;
+      }
+
+      let bestDevice: MediaDeviceInfo | null = null;
+      let maxRms = 0;
+
+      for (const device of audioInputs) {
+        try {
+          // 排除某些特定ID为空或并非真实物理设备的项（根据需要可调整）
+          if (device.deviceId === "communications") continue;
+
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: { deviceId: { exact: device.deviceId } },
+          });
+
+          const audioContext = new Ctor();
+          const analyser = audioContext.createAnalyser();
+          analyser.fftSize = 256;
+          // 不加平滑，快速反应
+          analyser.smoothingTimeConstant = 0;
+
+          const microphone = audioContext.createMediaStreamSource(stream);
+          microphone.connect(analyser);
+
+          // 采集 500ms 数据判断有没有声音跳动
+          const sampleDuration = 500;
+          const sampleInterval = 50;
+          const totalSamples = Math.floor(sampleDuration / sampleInterval);
+          let sumRms = 0;
+
+          for (let i = 0; i < totalSamples; i++) {
+            await new Promise((resolve) => setTimeout(resolve, sampleInterval));
+            const dataArray = new Float32Array(analyser.fftSize);
+            analyser.getFloatTimeDomainData(dataArray);
+            let sumSq = 0;
+            for (let j = 0; j < dataArray.length; j++) {
+              sumSq += dataArray[j] * dataArray[j];
+            }
+            sumRms += Math.sqrt(sumSq / dataArray.length);
+          }
+
+          const avgRms = sumRms / totalSamples;
+          if (avgRms > maxRms) {
+            maxRms = avgRms;
+            bestDevice = device;
+          }
+
+          microphone.disconnect();
+          audioContext.close();
+          stream.getTracks().forEach((track) => track.stop());
+        } catch (e) {
+          logger.warn(`Failed to test microphone ${device.label}:`, e);
+        }
+      }
+
+      // 如果测出的最强 RMS 仍然极其微弱（例如 < 0.001），说明环境全静音或者全坏了
+      if (bestDevice && maxRms > 0.001) {
+        setDraftMicrophoneDeviceId(bestDevice.deviceId);
+        openMessagePopup({
+          type: "general",
+          title: "检测成功",
+          message: `已自动选择最佳麦克风: ${bestDevice.label || "未知名称"}`,
+        });
+      } else {
+        openMessagePopup({
+          type: "general",
+          title: "检测失败",
+          message:
+            "测试了所有麦克风，未能检测到明显声音输入。请确保麦克风未被物理静音并且系统权限已打开。",
+        });
+      }
+    } catch (e) {
+      logger.error("自动检测麦克风出错:", e);
+      openMessagePopup({
+        type: "error",
+        title: "检测出错",
+        message: e instanceof Error ? e.message : "未知错误",
+      });
+    } finally {
+      setIsAutoDetecting(false);
+    }
+  }, [openMessagePopup]);
 
   // 初始化噪音设置为草稿
   useEffect(() => {
@@ -416,18 +522,30 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
 
         <FormRow gap="sm" align="start">
           <div style={{ flex: 1 }}>
-            <FormSelect
-              label="采集麦克风"
-              value={draftMicrophoneDeviceId}
-              onChange={(e) => setDraftMicrophoneDeviceId(e.target.value)}
-              options={[
-                { value: "default", label: "系统默认麦克风" },
-                ...audioDevices.map((d) => ({
-                  value: d.deviceId,
-                  label: d.label || `麦克风 (${d.deviceId.slice(0, 5)}...)`,
-                })),
-              ]}
-            />
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "8px" }}>
+              <div style={{ flex: 1 }}>
+                <FormSelect
+                  label="采集麦克风"
+                  value={draftMicrophoneDeviceId}
+                  onChange={(e) => setDraftMicrophoneDeviceId(e.target.value)}
+                  options={[
+                    { value: "default", label: "系统默认麦克风" },
+                    ...audioDevices.map((d) => ({
+                      value: d.deviceId,
+                      label: d.label || `麦克风 (${d.deviceId.slice(0, 5)}...)`,
+                    })),
+                  ]}
+                />
+              </div>
+              <FormButton
+                variant="secondary"
+                onClick={handleAutoDetectMicrophone}
+                disabled={isAutoDetecting}
+                style={{ height: "36px", marginBottom: "2px", whiteSpace: "nowrap" }}
+              >
+                {isAutoDetecting ? "检测中..." : "自动寻找有效的麦克风"}
+              </FormButton>
+            </div>
             <div style={{ marginTop: 8 }}>
               <div
                 style={{
