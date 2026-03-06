@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
+import SchoolBadge from "../../icons/school.png";
 import { getNoiseControlSettings } from "../../utils/noiseControlSettings";
 import { readNoiseSlices, subscribeNoiseSlicesUpdated } from "../../utils/noiseSliceService";
 import { FormButton, FormSection as _FormSection } from "../FormComponents";
@@ -897,12 +898,27 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
             marginBottom: "40px",
             borderBottom: "2px solid #333",
             paddingBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "20px",
           }}
         >
-          <h2 style={{ fontSize: "28px", margin: "0 0 10px 0", color: "#111" }}>天津市第二中学</h2>
-          <h3 style={{ fontSize: "22px", margin: "0", color: "#444" }}>
-            沉浸式自习环境 - 噪音数据专项测评报告
-          </h3>
+          <img
+            src={SchoolBadge}
+            alt="School Logo"
+            style={{ width: "64px", height: "64px", objectFit: "contain" }}
+          />
+          <div style={{ textAlign: "left" }}>
+            <h2
+              style={{ fontSize: "28px", margin: "0 0 8px 0", color: "#111", letterSpacing: "2px" }}
+            >
+              天津市第二中学
+            </h2>
+            <h3 style={{ fontSize: "20px", margin: "0", color: "#555", fontWeight: "normal" }}>
+              沉浸式自习环境 - 噪音数据专项测评报告
+            </h3>
+          </div>
         </div>
 
         <div
