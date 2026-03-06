@@ -60,7 +60,9 @@ function applyFixedNoiseAnalysisSettings(settings: NoiseControlSettings): NoiseC
 }
 
 export function getNoiseControlSettings(): NoiseControlSettings {
-  return applyFixedNoiseAnalysisSettings(getAppSettings().noiseControl as unknown as NoiseControlSettings);
+  return applyFixedNoiseAnalysisSettings(
+    getAppSettings().noiseControl as unknown as NoiseControlSettings
+  );
 }
 
 export function saveNoiseControlSettings(settings: Partial<NoiseControlSettings>): void {

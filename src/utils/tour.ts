@@ -223,8 +223,7 @@ export const startTour = (force = false, options?: TourOptions) => {
         element: '[data-tour="hud-header"]',
         popover: {
           title: "全局控制与深度偏好",
-          description:
-            "顶部悬浮栏可用于随时切换“时钟/自习/倒计时”模式。",
+          description: "顶部悬浮栏可用于随时切换“时钟/自习/倒计时”模式。",
           side: "bottom",
           align: "center",
         },

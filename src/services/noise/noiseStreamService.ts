@@ -60,23 +60,17 @@ function computeDisplayDbFromRms(params: {
 }
 
 /**
- * 计算时间加权平均值
+ * 计算中位数滤波（替代原本的时间加权平均，对突发短噪极不敏感）
  * @param windowArr 包含时间戳和值的数组
- * @param now 当前时间戳
- * @returns 加权平均值
+ * @returns 中位数
  */
-function computeTimeWeightedAverage(windowArr: { t: number; v: number }[], now: number): number {
+function computeMedianAverage(windowArr: { t: number; v: number }[]): number {
   if (!windowArr.length) return 0;
-  let sum = 0;
-  let total = 0;
-  for (let i = 0; i < windowArr.length; i++) {
-    const t0 = windowArr[i].t;
-    const t1 = i < windowArr.length - 1 ? windowArr[i + 1].t : now;
-    const dt = Math.max(0, t1 - t0);
-    sum += windowArr[i].v * dt;
-    total += dt;
-  }
-  return total > 0 ? sum / total : windowArr[windowArr.length - 1].v;
+  // 取出所有的值并排序
+  const values = windowArr.map((x) => x.v).sort((a, b) => a - b);
+  const mid = Math.floor(values.length / 2);
+  // 返回中位数
+  return values.length % 2 !== 0 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
 }
 
 const listeners = new Set<Listener>();
@@ -191,14 +185,19 @@ async function hardStart() {
     capacity: Math.ceil(retentionMs / Math.max(10, Math.round(frameMs))) + 32,
   });
 
-  setSnapshot({ status: "initializing", latestSlice: snapshot.latestSlice, ringBuffer: [] });
+  setSnapshot({
+    status: "initializing",
+    latestSlice: snapshot.latestSlice,
+    ringBuffer: [],
+  });
 
   try {
     const capture = await startNoiseCapture({
       analyserFftSize: 2048,
       highpassHz: 80,
       lowpassHz: 8000,
-      deviceId: microphoneDeviceId && microphoneDeviceId !== "default" ? microphoneDeviceId : undefined,
+      deviceId:
+        microphoneDeviceId && microphoneDeviceId !== "default" ? microphoneDeviceId : undefined,
     });
     captureCleanup = () => stopNoiseCapture(capture);
 
@@ -230,9 +229,10 @@ async function hardStart() {
         });
         const now = frame.t;
         windowSamples.push({ t: now, v: displayDb });
-        const cutoff = now - Math.max(200, Math.round(avgWindowSec * 1000));
+        // 强制窗口最小为 1500 毫秒，以确保中位数能完全“吞咽”掉 0.5s 左右的短促巨响
+        const cutoff = now - Math.max(1500, Math.round(avgWindowSec * 1000));
         while (windowSamples.length && windowSamples[0].t < cutoff) windowSamples.shift();
-        const avgDisplay = computeTimeWeightedAverage(windowSamples, now);
+        const avgDisplay = computeMedianAverage(windowSamples);
 
         const nextStatus: NoiseStreamStatus = avgDisplay >= snapshot.maxLevelDb ? "noisy" : "quiet";
         snapshot = {

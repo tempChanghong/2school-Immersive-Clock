@@ -117,10 +117,8 @@ export function createNoiseSliceAggregator(
 
   let sliceStart: number | null = null;
   let frames = 0;
-  let sumDbfs = 0;
   let sumDisplayDb = 0;
   let maxDbfs = -Infinity;
-  let aboveFrames = 0;
   let aboveDurationMs = 0;
   let segmentCount = 0;
   let lastAbove = false;
@@ -132,16 +130,18 @@ export function createNoiseSliceAggregator(
   const dbfsValues: number[] = [];
   const displayValues: number[] = [];
 
+  // [NEW] 记录当前违规段的开始时间与是否已计次
+  let currentSegmentStartTs: number | null = null;
+  let currentSegmentCounted = false;
+
   /** 无效帧阈值：低于此值视为静音/无效信号，跳过统计 */
   const INVALID_DBFS_THRESHOLD = -90;
 
   const reset = () => {
     sliceStart = null;
     frames = 0;
-    sumDbfs = 0;
     sumDisplayDb = 0;
     maxDbfs = -Infinity;
-    aboveFrames = 0;
     aboveDurationMs = 0;
     segmentCount = 0;
     lastAbove = false;
@@ -152,6 +152,8 @@ export function createNoiseSliceAggregator(
     maxGapMs = 0;
     dbfsValues.length = 0;
     displayValues.length = 0;
+    currentSegmentStartTs = null;
+    currentSegmentCounted = false;
   };
 
   const finalizeSlice = (
@@ -221,7 +223,6 @@ export function createNoiseSliceAggregator(
     }
 
     frames += 1;
-    sumDbfs += frame.dbfs;
     sumDisplayDb += displayDb;
     if (frame.dbfs > maxDbfs) maxDbfs = frame.dbfs;
     dbfsValues.push(frame.dbfs);
@@ -229,13 +230,24 @@ export function createNoiseSliceAggregator(
 
     const isAbove = frame.dbfs > scoreOpt.scoreThresholdDbfs;
     if (isAbove) {
-      aboveFrames += 1;
       aboveDurationMs += frameMs;
       if (!lastAbove) {
         const merged =
           lastSegmentEndTs !== null && frame.t - lastSegmentEndTs <= scoreOpt.segmentMergeGapMs;
-        if (!merged) segmentCount += 1;
+        if (!merged) {
+          // 开启出一段全新的噪音频段
+          currentSegmentStartTs = frame.t;
+          currentSegmentCounted = false;
+        }
         lastAbove = true;
+      }
+
+      // 突发短频过滤：仅当该段嘈杂声音绵延超过 2000 毫秒时，系统才正式计入一次违规打断
+      if (!currentSegmentCounted && currentSegmentStartTs !== null) {
+        if (frame.t - currentSegmentStartTs >= 2000) {
+          segmentCount += 1;
+          currentSegmentCounted = true;
+        }
       }
     } else if (lastAbove) {
       lastAbove = false;

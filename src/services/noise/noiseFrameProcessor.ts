@@ -51,15 +51,51 @@ export function createNoiseFrameProcessor(
 ): NoiseFrameProcessorController {
   const { analyser, onFrame } = options;
   const frameMs = Math.max(10, Math.round(options.frameMs));
-  const buffer = new Float32Array(analyser.fftSize);
+  const timeBuffer = new Float32Array(analyser.fftSize);
+  const freqBuffer = new Float32Array(analyser.frequencyBinCount);
 
   let timer: number | null = null;
 
   const tick = () => {
-    analyser.getFloatTimeDomainData(buffer);
-    const { rms, peak } = computeRmsAndPeak(buffer);
-    const dbfs = computeDbfsFromRms(rms);
-    onFrame({ t: Date.now(), rms, dbfs, peak });
+    // 1. 获取时域数据
+    analyser.getFloatTimeDomainData(timeBuffer);
+    const { rms: rawRms, peak } = computeRmsAndPeak(timeBuffer);
+
+    // 2. 获取频域数据并应用人声过滤降权
+    analyser.getFloatFrequencyData(freqBuffer);
+    const sampleRate = analyser.context.sampleRate;
+    const binSize = sampleRate / analyser.fftSize;
+
+    // 人声核心频段定位 (300Hz ~ 3000Hz)
+    const voiceStartBin = Math.floor(300 / binSize);
+    const voiceEndBin = Math.ceil(3000 / binSize);
+
+    let totalEnergy = 0;
+    let voiceEnergy = 0;
+
+    // 遍历频域（线性级数求和计算能量）
+    for (let i = 0; i < freqBuffer.length; i++) {
+      const db = freqBuffer[i];
+      // 将 dB 转换为近似的线性数值，去除负无穷
+      const energy = db > -120 ? Math.pow(10, db / 10) : 0;
+      totalEnergy += energy;
+
+      if (i >= voiceStartBin && i <= voiceEndBin) {
+        voiceEnergy += energy;
+      }
+    }
+
+    let finalRms = rawRms;
+    if (totalEnergy > 0) {
+      const voiceRatio = voiceEnergy / totalEnergy;
+      // 降权因子：当人声频段能量占比极低（不足 50%）时，强制削减最终生成的 RMS
+      // 避免掉笔、环境极低频机箱轰鸣的高宽带能量拉响警报
+      const penalty = Math.min(1, voiceRatio * 2);
+      finalRms *= penalty;
+    }
+
+    const dbfs = computeDbfsFromRms(finalRms);
+    onFrame({ t: Date.now(), rms: finalRms, dbfs, peak });
   };
 
   const start = () => {
