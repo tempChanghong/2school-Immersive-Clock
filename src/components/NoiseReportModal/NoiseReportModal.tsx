@@ -1219,6 +1219,419 @@ export const NoiseReportModal: React.FC<NoiseReportModalProps> = ({
               </div>
             </div>
 
+            {/* PDF - Secondary Charts Section */}
+            {report && (
+              <div style={{ marginTop: "30px", pageBreakInside: "avoid" }}>
+                <h4
+                  style={{
+                    fontSize: "18px",
+                    borderBottom: "1px solid #ddd",
+                    paddingBottom: "10px",
+                    marginBottom: "20px",
+                  }}
+                >
+                  详细分时数据与扣分模型指标
+                </h4>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: "20px",
+                  }}
+                >
+                  {/* 评分走势 */}
+                  <div
+                    style={{
+                      backgroundColor: "#fafafa",
+                      padding: "15px",
+                      borderRadius: "8px",
+                      border: "1px solid #eee",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        marginBottom: "15px",
+                        color: "#555",
+                      }}
+                    >
+                      评分走势 (0-100)
+                    </div>
+                    <svg
+                      width="100%"
+                      height="120px"
+                      viewBox={`0 0 ${smallChart.width} ${smallChart.height}`}
+                      preserveAspectRatio="none"
+                    >
+                      <defs>
+                        <mask id="pdfScoreCoverageMaskSmall">
+                          {smallChart.maskRects.map((r, i) => (
+                            <rect
+                              key={i}
+                              x={r.x}
+                              y={0}
+                              width={r.w}
+                              height={smallChart.height}
+                              fill="white"
+                            />
+                          ))}
+                        </mask>
+                      </defs>
+                      {smallChart.yTicks.map((t) => (
+                        <line
+                          key={`y-${t.label}`}
+                          x1={smallChart.padding}
+                          x2={smallChart.width - smallChart.padding}
+                          y1={t.y}
+                          y2={t.y}
+                          stroke="#eee"
+                          strokeWidth="1"
+                        />
+                      ))}
+                      <path
+                        d={smallChart.scorePath}
+                        fill="none"
+                        stroke={report.COLORS.score}
+                        strokeWidth="2"
+                        opacity={0.9}
+                        mask="url(#pdfScoreCoverageMaskSmall)"
+                      />
+                      {smallChart.xTicks.map((t, idx) => (
+                        <text
+                          key={`x-${idx}`}
+                          x={t.x}
+                          y={smallChart.height - 5}
+                          textAnchor={
+                            idx === 0
+                              ? "start"
+                              : idx === smallChart.xTicks.length - 1
+                                ? "end"
+                                : "middle"
+                          }
+                          fill="#999"
+                          fontSize="10"
+                        >
+                          {t.label}
+                        </text>
+                      ))}
+                    </svg>
+                  </div>
+
+                  {/* 打断次数密度 */}
+                  <div
+                    style={{
+                      backgroundColor: "#fafafa",
+                      padding: "15px",
+                      borderRadius: "8px",
+                      border: "1px solid #eee",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        marginBottom: "15px",
+                        color: "#555",
+                      }}
+                    >
+                      打断次数密度 (次/分)
+                    </div>
+                    <svg
+                      width="100%"
+                      height="120px"
+                      viewBox={`0 0 ${smallChart.width} ${smallChart.height}`}
+                      preserveAspectRatio="none"
+                    >
+                      {smallChart.eventTicks.map((t) => (
+                        <line
+                          key={`y-${t.uniqueId}`}
+                          x1={smallChart.padding}
+                          x2={smallChart.width - smallChart.padding}
+                          y1={t.y}
+                          y2={t.y}
+                          stroke="#eee"
+                          strokeWidth="1"
+                        />
+                      ))}
+                      {smallChart.eventBuckets.map((p, i) => {
+                        if (p.events === 0) return null;
+                        const barHeight =
+                          (p.events / Math.max(1, smallChart.maxBucketEvents)) *
+                          (smallChart.height - smallChart.padding * 2);
+                        const y = smallChart.height - smallChart.padding - barHeight;
+                        return (
+                          <rect
+                            key={i}
+                            x={p.x - 1.5}
+                            y={y}
+                            width={3}
+                            height={barHeight}
+                            fill={report.COLORS.event}
+                            opacity={0.8}
+                          />
+                        );
+                      })}
+                      {smallChart.xTicks.map((t, idx) => (
+                        <text
+                          key={`x-${idx}`}
+                          x={t.x}
+                          y={smallChart.height - 5}
+                          textAnchor={
+                            idx === 0
+                              ? "start"
+                              : idx === smallChart.xTicks.length - 1
+                                ? "end"
+                                : "middle"
+                          }
+                          fill="#999"
+                          fontSize="10"
+                        >
+                          {t.label}
+                        </text>
+                      ))}
+                    </svg>
+                  </div>
+
+                  {/* 噪音等级分布 */}
+                  <div
+                    style={{
+                      backgroundColor: "#fafafa",
+                      padding: "15px",
+                      borderRadius: "8px",
+                      border: "1px solid #eee",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        marginBottom: "15px",
+                        color: "#555",
+                      }}
+                    >
+                      噪音等级分布
+                    </div>
+                    <div
+                      style={{
+                        height: "20px",
+                        display: "flex",
+                        borderRadius: "4px",
+                        overflow: "hidden",
+                        marginBottom: "15px",
+                        width: "100%",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${report.distribution.quiet * 100}%`,
+                          backgroundColor: report.COLORS.quiet,
+                        }}
+                      />
+                      <div
+                        style={{
+                          width: `${report.distribution.normal * 100}%`,
+                          backgroundColor: report.COLORS.normal,
+                        }}
+                      />
+                      <div
+                        style={{
+                          width: `${report.distribution.loud * 100}%`,
+                          backgroundColor: report.COLORS.loud,
+                        }}
+                      />
+                      <div
+                        style={{
+                          width: `${report.distribution.severe * 100}%`,
+                          backgroundColor: report.COLORS.severe,
+                        }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "11px",
+                        color: "#666",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <div
+                          style={{
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            backgroundColor: report.COLORS.quiet,
+                          }}
+                        />
+                        安静 ({(report.distribution.quiet * 100).toFixed(0)}%)
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <div
+                          style={{
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            backgroundColor: report.COLORS.normal,
+                          }}
+                        />
+                        正常 ({(report.distribution.normal * 100).toFixed(0)}%)
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <div
+                          style={{
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            backgroundColor: report.COLORS.loud,
+                          }}
+                        />
+                        吵闹 ({(report.distribution.loud * 100).toFixed(0)}%)
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <div
+                          style={{
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            backgroundColor: report.COLORS.severe,
+                          }}
+                        />
+                        极吵 ({(report.distribution.severe * 100).toFixed(0)}%)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 扣分归因 */}
+                  <div
+                    style={{
+                      backgroundColor: "#fafafa",
+                      padding: "15px",
+                      borderRadius: "8px",
+                      border: "1px solid #eee",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        marginBottom: "15px",
+                        color: "#555",
+                      }}
+                    >
+                      违规与扣分归因拆解 (横柱越长扣分越多)
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                        width: "100%",
+                      }}
+                    >
+                      {/* 持续 */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          fontSize: "11px",
+                          color: "#555",
+                        }}
+                      >
+                        <div style={{ width: "35px" }}>持续</div>
+                        <div
+                          style={{
+                            flex: 1,
+                            backgroundColor: "#E0E0E0",
+                            height: "6px",
+                            borderRadius: "3px",
+                            margin: "0 10px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${report.sustainedPenalty * 100}%`,
+                              backgroundColor: report.COLORS.sustained,
+                              height: "100%",
+                            }}
+                          />
+                        </div>
+                        <div style={{ width: "25px", textAlign: "right", fontWeight: "bold" }}>
+                          {(report.sustainedPenalty * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                      {/* 时长 */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          fontSize: "11px",
+                          color: "#555",
+                        }}
+                      >
+                        <div style={{ width: "35px" }}>时长</div>
+                        <div
+                          style={{
+                            flex: 1,
+                            backgroundColor: "#E0E0E0",
+                            height: "6px",
+                            borderRadius: "3px",
+                            margin: "0 10px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${report.timePenalty * 100}%`,
+                              backgroundColor: report.COLORS.time,
+                              height: "100%",
+                            }}
+                          />
+                        </div>
+                        <div style={{ width: "25px", textAlign: "right", fontWeight: "bold" }}>
+                          {(report.timePenalty * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                      {/* 打断 */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          fontSize: "11px",
+                          color: "#555",
+                        }}
+                      >
+                        <div style={{ width: "35px" }}>打断</div>
+                        <div
+                          style={{
+                            flex: 1,
+                            backgroundColor: "#E0E0E0",
+                            height: "6px",
+                            borderRadius: "3px",
+                            margin: "0 10px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${report.segmentPenalty * 100}%`,
+                              backgroundColor: report.COLORS.segment,
+                              height: "100%",
+                            }}
+                          />
+                        </div>
+                        <div style={{ width: "25px", textAlign: "right", fontWeight: "bold" }}>
+                          {(report.segmentPenalty * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div
               style={{
                 fontSize: "14px",
