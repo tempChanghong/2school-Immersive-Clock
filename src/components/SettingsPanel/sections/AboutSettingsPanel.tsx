@@ -27,6 +27,10 @@ import styles from "../SettingsPanel.module.css";
 // 版本建议优先从环境变量（vite.config 注入）读取，回退到 package.json
 const appVersion = import.meta.env.VITE_APP_VERSION;
 
+const projectVersion = "1.0.0";
+
+const precheckVersion = "0.1.0";
+
 export interface AboutSettingsPanelProps {
   onRegisterSave?: (fn: () => void) => void;
 }
@@ -279,7 +283,9 @@ const AboutSettingsPanel: React.FC<AboutSettingsPanelProps> = ({ onRegisterSave 
   return (
     <div id="about-panel" role="tabpanel" aria-labelledby="about">
       <FormSection title="项目信息">
-        <p className={styles.infoText}>版本：v{version}</p>
+        <p className={styles.infoText}>版本：v{projectVersion}</p>
+        <p className={styles.infoText}>核心版本号（Core）：v{version}</p>
+        <p className={styles.infoText}>预检系统版本号（Pre-Check）：v{precheckVersion}</p>
         <p className={styles.infoText}>版权：{license} License</p>
         <p className={styles.infoText}>
           作者网站：
