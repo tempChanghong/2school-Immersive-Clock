@@ -46,6 +46,8 @@ function loadStudyState(): StudyState {
     carouselIntervalSec: study.carouselIntervalSec,
     digitColor: study.style.digitColor,
     digitOpacity: study.style.digitOpacity,
+    textColor: study.style.textColor,
+    textOpacity: study.style.textOpacity,
     cardStyleEnabled: study.style.cardStyleEnabled,
     numericFontFamily: study.style.numericFontFamily,
     textFontFamily: study.style.textFontFamily,
@@ -362,6 +364,45 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         study: digitOpacityUpdatedStudy,
+      };
+
+    case "SET_COUNTDOWN_TEXT_COLOR":
+      const textColorUpdatedStudy = {
+        ...state.study,
+        textColor: action.payload,
+      };
+      updateAppSettings((current) => ({
+        study: {
+          ...current.study,
+          style: {
+            ...current.study.style,
+            textColor: action.payload,
+          },
+        },
+      }));
+      return {
+        ...state,
+        study: textColorUpdatedStudy,
+      };
+
+    case "SET_COUNTDOWN_TEXT_OPACITY":
+      const textOpacityUpdatedStudy = {
+        ...state.study,
+        textOpacity:
+          typeof action.payload === "number" ? Math.max(0, Math.min(1, action.payload)) : 1,
+      };
+      updateAppSettings((current) => ({
+        study: {
+          ...current.study,
+          style: {
+            ...current.study.style,
+            textOpacity: textOpacityUpdatedStudy.textOpacity,
+          },
+        },
+      }));
+      return {
+        ...state,
+        study: textOpacityUpdatedStudy,
       };
 
     case "SET_STUDY_NUMERIC_FONT":

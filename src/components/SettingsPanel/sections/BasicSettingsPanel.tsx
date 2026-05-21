@@ -444,6 +444,14 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
           type: "SET_COUNTDOWN_DIGIT_OPACITY",
           payload: countdownStyleMode === "custom" ? digitOpacity : 1,
         });
+        dispatch({
+          type: "SET_COUNTDOWN_TEXT_COLOR",
+          payload: countdownStyleMode === "custom" ? singleTextColor || undefined : undefined,
+        });
+        dispatch({
+          type: "SET_COUNTDOWN_TEXT_OPACITY",
+          payload: countdownStyleMode === "custom" ? singleTextOpacity : 1,
+        });
       }
       dispatch({
         type: "SET_STUDY_TIME_COLOR",

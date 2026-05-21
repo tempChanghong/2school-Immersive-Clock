@@ -87,16 +87,28 @@ export const CountdownManagerPanel: React.FC<CountdownManagerPanelProps> = ({ on
                 : "自定义事件",
           targetDate:
             it.kind === "custom" ? (it.targetDate && it.targetDate.trim()) || "" : undefined,
-          bgColor:
-            isCustomStyle ? (it.bgColor && it.bgColor.trim().length > 0 ? it.bgColor.trim() : "#121212") : undefined,
+          bgColor: isCustomStyle
+            ? it.bgColor && it.bgColor.trim().length > 0
+              ? it.bgColor.trim()
+              : "#121212"
+            : undefined,
           bgOpacity: isCustomStyle && typeof it.bgOpacity === "number" ? it.bgOpacity : 0,
-          textColor:
-            isCustomStyle ? (it.textColor && it.textColor.trim().length > 0 ? it.textColor.trim() : "#E0E0E0") : undefined,
+          textColor: isCustomStyle
+            ? it.textColor && it.textColor.trim().length > 0
+              ? it.textColor.trim()
+              : "#E0E0E0"
+            : undefined,
           textOpacity: isCustomStyle && typeof it.textOpacity === "number" ? it.textOpacity : 1,
-          digitColor:
-            isCustomStyle ? (it.digitColor && it.digitColor.trim().length > 0 ? it.digitColor.trim() : "#03DAC6") : undefined,
-          digitOpacity:
-            isCustomStyle ? (typeof it.digitOpacity === "number" ? it.digitOpacity : 1) : undefined,
+          digitColor: isCustomStyle
+            ? it.digitColor && it.digitColor.trim().length > 0
+              ? it.digitColor.trim()
+              : "#03DAC6"
+            : undefined,
+          digitOpacity: isCustomStyle
+            ? typeof it.digitOpacity === "number"
+              ? it.digitOpacity
+              : 1
+            : undefined,
           order: idx,
         };
       });

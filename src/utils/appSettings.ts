@@ -88,6 +88,8 @@ export interface AppSettings {
       timeColor?: string;
       dateColor?: string;
       cardStyleEnabled?: boolean;
+      textColor?: string;
+      textOpacity: number;
     };
     alerts: {
       weatherAlert: boolean;
@@ -206,6 +208,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     style: {
       digitOpacity: 1,
       cardStyleEnabled: true,
+      textOpacity: 1,
     },
     alerts: {
       weatherAlert: false,

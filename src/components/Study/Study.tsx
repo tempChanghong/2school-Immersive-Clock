@@ -429,9 +429,17 @@ export function Study() {
     } else {
       nameText = item.name && item.name.trim().length > 0 ? item.name!.trim() : "自定义事件";
     }
-    const textCol = item.textColor
-      ? hexToRgba(item.textColor, typeof item.textOpacity === "number" ? item.textOpacity : 1)
-      : undefined;
+    const textCol =
+      (item.textColor ?? study.textColor)
+        ? hexToRgba(
+            item.textColor ?? study.textColor ?? "#E0E0E0",
+            typeof item.textOpacity === "number"
+              ? item.textOpacity
+              : typeof study.textOpacity === "number"
+                ? study.textOpacity
+                : 1
+          )
+        : undefined;
     const bgCol = item.bgColor
       ? hexToRgba(item.bgColor, typeof item.bgOpacity === "number" ? item.bgOpacity : 0)
       : undefined;

@@ -169,6 +169,10 @@ export interface StudyState {
   digitColor?: string;
   /** 倒计时数字透明度（0-1） */
   digitOpacity?: number;
+  /** 倒计时文字颜色（全局应用到非数字部分） */
+  textColor?: string;
+  /** 倒计时文字透明度（0-1） */
+  textOpacity?: number;
   /** 是否启用自习组件的小卡片样式 */
   cardStyleEnabled?: boolean;
   /** 数字字体家族（覆盖自习页面的 --font-main） */
@@ -355,6 +359,8 @@ export type AppAction =
   | { type: "SET_CAROUSEL_INTERVAL"; payload: number }
   | { type: "SET_COUNTDOWN_DIGIT_COLOR"; payload: string | undefined }
   | { type: "SET_COUNTDOWN_DIGIT_OPACITY"; payload: number | undefined }
+  | { type: "SET_COUNTDOWN_TEXT_COLOR"; payload: string | undefined }
+  | { type: "SET_COUNTDOWN_TEXT_OPACITY"; payload: number | undefined }
   | { type: "SET_STUDY_NUMERIC_FONT"; payload: string | undefined }
   | { type: "SET_STUDY_TEXT_FONT"; payload: string | undefined }
   | { type: "SET_STUDY_TIME_COLOR"; payload: string | undefined }
