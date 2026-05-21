@@ -318,7 +318,9 @@ const AboutSettingsPanel: React.FC<AboutSettingsPanelProps> = ({ onRegisterSave 
       </FormSection>
 
       <FormSection title="设置管理">
-        <p className={styles.helpText}>您可以导出当前设置进行备份，或导入之前的设置文件。</p>
+        <p className={styles.helpText}>
+          您可以导出当前设置进行备份，或导入之前的设置文件。也可以导出预检诊断信息供问题排查。
+        </p>
         <FormButtonGroup align="left">
           <FormButton
             variant="secondary"
@@ -337,6 +339,14 @@ const AboutSettingsPanel: React.FC<AboutSettingsPanelProps> = ({ onRegisterSave 
             aria-label="导入设置"
           >
             导入设置
+          </FormButton>
+          <FormButton
+            variant="secondary"
+            size="md"
+            onClick={handleExportDiagnostic}
+            aria-label="导出诊断信息"
+          >
+            导出诊断信息
           </FormButton>
           <input
             type="file"
@@ -411,9 +421,6 @@ const AboutSettingsPanel: React.FC<AboutSettingsPanelProps> = ({ onRegisterSave 
               </FormButton>
               <FormButton variant="secondary" size="md" onClick={handleExportErrorRecords}>
                 导出记录
-              </FormButton>
-              <FormButton variant="secondary" size="md" onClick={handleExportDiagnostic}>
-                导出诊断信息
               </FormButton>
               <FormButton variant="danger" size="md" onClick={handleClearErrorRecords}>
                 清空记录
