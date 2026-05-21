@@ -361,8 +361,11 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
         setSingleTextOpacity(nextSingleTextOpacity);
       }
     } else {
-      // 兼容旧逻辑：无 items 时用 countdownType 决定模式
+      // 兼容旧逻辑：无 items 时用 countdownType 决定模式，从全局风格字段中读取颜色
       setCountdownMode((study.countdownType ?? "gaokao") === "gaokao" ? "gaokao" : "single");
+      nextSingleTextColor = study.textColor || nextSingleTextColor;
+      nextSingleTextOpacity =
+        typeof study.textOpacity === "number" ? study.textOpacity : nextSingleTextOpacity;
       setSingleBgColor(nextSingleBgColor);
       setSingleTextColor(nextSingleTextColor);
       setSingleBgOpacity(nextSingleBgOpacity);
@@ -375,8 +378,10 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
       nextDigitOpacity !== 1 ||
       nextSingleBgColor.trim().length > 0 ||
       nextSingleTextColor.trim().length > 0 ||
+      (typeof study.textColor === "string" && study.textColor.trim().length > 0) ||
       nextSingleBgOpacity !== 0 ||
-      nextSingleTextOpacity !== 1;
+      nextSingleTextOpacity !== 1 ||
+      (typeof study.textOpacity === "number" && study.textOpacity !== 1);
     setCountdownStyleMode(hasCountdownCustomStyle ? "custom" : "default");
     setTimeColorMode(study.timeColor ? "custom" : "default");
     setTimeColor(study.timeColor ?? "#ffffff");
@@ -408,6 +413,8 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     study.countdownItems,
     study.digitColor,
     study.digitOpacity,
+    study.textColor,
+    study.textOpacity,
     study.timeColor,
     study.dateColor,
     study.numericFontFamily,
@@ -446,11 +453,16 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
         });
         dispatch({
           type: "SET_COUNTDOWN_TEXT_COLOR",
-          payload: countdownStyleMode === "custom" ? singleTextColor || undefined : undefined,
+          payload: countdownStyleMode === "custom" ? singleTextColor || "#E0E0E0" : undefined,
         });
         dispatch({
           type: "SET_COUNTDOWN_TEXT_OPACITY",
-          payload: countdownStyleMode === "custom" ? singleTextOpacity : 1,
+          payload:
+            countdownStyleMode === "custom"
+              ? typeof singleTextOpacity === "number" && singleTextOpacity >= 0
+                ? singleTextOpacity
+                : 1
+              : 1,
         });
       }
       dispatch({
