@@ -11,6 +11,7 @@ import {
   updateTimeSyncSettings,
 } from "../../../utils/appSettings";
 import { logger } from "../../../utils/logger";
+import { traceSettingsSaveDiff } from "../../../utils/precheck";
 import { resolveStartupMode } from "../../../utils/startupMode";
 import {
   BACKGROUND_INDEXEDDB_MARKER,
@@ -424,6 +425,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
   // 注册保存动作：统一在父组件保存时派发
   useEffect(() => {
     onRegisterSave?.(() => {
+      const beforeSettings = getAppSettings();
       let hasError = false;
       // 倒计时模式映射到旧字段：多事件作为自定义类型
       const nextType: "gaokao" | "custom" = countdownMode === "gaokao" ? "gaokao" : "custom";
@@ -605,6 +607,9 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
       if (!hasError) {
         showSuccess("设置已保存");
       }
+
+      const afterSettings = getAppSettings();
+      traceSettingsSaveDiff(`basic-save-${Date.now()}`, beforeSettings, afterSettings, []);
     });
   }, [
     onRegisterSave,

@@ -2,12 +2,14 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 
 import { useAppState } from "../../contexts/AppContext";
+import { usePrecheckSnapshot } from "../../hooks/usePrecheckSnapshot";
 import { useTimer } from "../../hooks/useTimer";
 import { CountdownItem } from "../../types";
 import { DEFAULT_SCHEDULE, StudyPeriod } from "../../types/studySchedule";
 import { hexToRgba } from "../../utils/colorUtils";
 import { formatClock } from "../../utils/formatTime";
 import { getAutoPopupSetting } from "../../utils/noiseReportSettings";
+import { createPrecheckLogger } from "../../utils/precheck";
 import { readStudyBackground } from "../../utils/studyBackgroundStorage";
 import { ensureInjectedFonts } from "../../utils/studyFontStorage";
 import { readStudySchedule } from "../../utils/studyScheduleStorage";
@@ -20,6 +22,8 @@ import NoiseReportModal, { NoiseReportPeriod } from "../NoiseReportModal/NoiseRe
 import StudyStatus from "../StudyStatus";
 
 import styles from "./Study.module.css";
+
+const studyPrecheckLog = createPrecheckLogger("Study.Render");
 /**
  * 自习组件
  * 显示当前时间和倒计时轮播
@@ -41,6 +45,17 @@ export function Study() {
 
   // 背景设置
   const [_backgroundSettings, setBackgroundSettings] = useState(readStudyBackground());
+
+  usePrecheckSnapshot("Study", {
+    textColor: study.textColor,
+    digitColor: study.digitColor,
+    textOpacity: study.textOpacity,
+    digitOpacity: study.digitOpacity,
+    countdownItems: study.countdownItems?.length ?? 0,
+    cardStyleEnabled: study.cardStyleEnabled,
+    timeColor: study.timeColor,
+    dateColor: study.dateColor,
+  });
 
   // 轮播：容器与尺寸测量
   const countdownRef = useRef<HTMLDivElement | null>(null);
@@ -451,6 +466,17 @@ export function Study() {
           ? study.digitOpacity
           : 1;
     const digitCol = digitBaseColor ? hexToRgba(digitBaseColor, digitAlpha) : undefined;
+
+    studyPrecheckLog.debug("renderItem 颜色级联", {
+      itemId: item.id,
+      itemTextColor: item.textColor,
+      studyTextColor: study.textColor,
+      finalTextCol: textCol,
+      itemDigitColor: item.digitColor,
+      studyDigitColor: study.digitColor,
+      finalDigitCol: digitCol,
+    });
+
     return (
       <div
         key={item.id}

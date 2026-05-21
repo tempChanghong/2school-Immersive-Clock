@@ -214,7 +214,7 @@ const DEFAULT_SETTINGS: AppSettings = {
       weatherAlert: false,
       minutelyPrecip: false,
       errorPopup: true,
-      errorCenterMode: "off",
+      errorCenterMode: "memory",
       airQuality: false,
       sunriseSunset: false,
       classEndForecast: false,
@@ -477,15 +477,17 @@ export function updateAppSettings(
     localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(nextSettings));
     return { success: true };
   } catch (error) {
-    logger.error("Failed to save AppSettings", error);
+    logger.error("更新 AppSettings 失败", error);
     const isQuota =
       error instanceof DOMException &&
       (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED");
-    return {
+    const result: SettingsSaveResult = {
       success: false,
       error: isQuota ? "存储空间不足，请清理背景图片或其他大体积数据" : "设置保存失败，请重试",
       quotaExceeded: isQuota,
     };
+    window.dispatchEvent(new CustomEvent("precheck:settingsWriteFailed", { detail: result }));
+    return result;
   }
 }
 

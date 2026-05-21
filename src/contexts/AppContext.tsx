@@ -4,7 +4,10 @@ import { STOPWATCH_TICK_MS } from "../constants/timer";
 import { AppState, AppAction, StudyState, QuoteChannelState, QuoteSettingsState } from "../types";
 import { ClassworksNotification } from "../types/classworks";
 import { getAppSettings, updateAppSettings, updateStudySettings } from "../utils/appSettings";
+import type { SettingsSaveResult } from "../utils/appSettings";
 import { setErrorCenterMode } from "../utils/errorCenter";
+import { logger } from "../utils/logger";
+import { withPrecheckMiddleware } from "../utils/precheck";
 import { getStartupModeFromSettings } from "../utils/startupMode";
 import { nowMs } from "../utils/timeSource";
 
@@ -97,6 +100,17 @@ const initialState: AppState = {
  * 导出用于测试的默认状态
  */
 export const getInitialState = (): AppState => initialState;
+
+/**
+ * 检查 SettingsSaveResult 并在失败时记录日志
+ */
+function checkedSettingsSave(actionType: string, result: SettingsSaveResult): void {
+  if (!result.success) {
+    logger.error(`Reducer 设置保存失败 [${actionType}]: ${result.error || "未知错误"}`, {
+      quotaExceeded: result.quotaExceeded,
+    });
+  }
+}
 
 /**
  * 应用状态减速器
@@ -261,8 +275,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         targetYear: action.payload,
       };
-      // 保存到本地存储
-      updateStudySettings({ targetYear: action.payload });
+      checkedSettingsSave(action.type, updateStudySettings({ targetYear: action.payload }));
       return {
         ...state,
         study: newStudyState,
@@ -273,7 +286,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         countdownType: action.payload,
       };
-      updateStudySettings({ countdownType: action.payload });
+      checkedSettingsSave(action.type, updateStudySettings({ countdownType: action.payload }));
       return {
         ...state,
         study: typeUpdatedStudy,
@@ -285,7 +298,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         customName: action.payload.name,
         customDate: action.payload.date,
       };
-      updateStudySettings({ customCountdown: action.payload });
+      checkedSettingsSave(action.type, updateStudySettings({ customCountdown: action.payload }));
       return {
         ...state,
         study: customUpdatedStudy,
@@ -299,7 +312,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
           ...action.payload,
         },
       };
-      updateStudySettings({ display: displayUpdatedStudy.display });
+      checkedSettingsSave(
+        action.type,
+        updateStudySettings({ display: displayUpdatedStudy.display })
+      );
       return {
         ...state,
         study: displayUpdatedStudy,
@@ -310,7 +326,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         countdownItems: action.payload,
       };
-      updateStudySettings({ countdownItems: action.payload });
+      checkedSettingsSave(action.type, updateStudySettings({ countdownItems: action.payload }));
       return {
         ...state,
         study: itemsUpdatedStudy,
@@ -321,7 +337,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         carouselIntervalSec: action.payload,
       };
-      updateStudySettings({ carouselIntervalSec: action.payload });
+      checkedSettingsSave(
+        action.type,
+        updateStudySettings({ carouselIntervalSec: action.payload })
+      );
       return {
         ...state,
         study: intervalUpdatedStudy,
@@ -332,15 +351,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         digitColor: action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            digitColor: action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              digitColor: action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: digitColorUpdatedStudy,
@@ -352,15 +374,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         digitOpacity:
           typeof action.payload === "number" ? Math.max(0, Math.min(1, action.payload)) : 1,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            digitOpacity: digitOpacityUpdatedStudy.digitOpacity,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              digitOpacity: digitOpacityUpdatedStudy.digitOpacity,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: digitOpacityUpdatedStudy,
@@ -371,15 +396,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         textColor: action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            textColor: action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              textColor: action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: textColorUpdatedStudy,
@@ -391,15 +419,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         textOpacity:
           typeof action.payload === "number" ? Math.max(0, Math.min(1, action.payload)) : 1,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            textOpacity: textOpacityUpdatedStudy.textOpacity,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              textOpacity: textOpacityUpdatedStudy.textOpacity,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: textOpacityUpdatedStudy,
@@ -410,15 +441,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         numericFontFamily: action.payload || undefined,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            numericFontFamily: action.payload || undefined,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              numericFontFamily: action.payload || undefined,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: numericFontUpdatedStudy,
@@ -429,15 +463,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         textFontFamily: action.payload || undefined,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            textFontFamily: action.payload || undefined,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              textFontFamily: action.payload || undefined,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: textFontUpdatedStudy,
@@ -448,15 +485,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         timeColor: action.payload || undefined,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            timeColor: action.payload || undefined,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              timeColor: action.payload || undefined,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: timeColorUpdatedStudy,
@@ -467,15 +507,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         dateColor: action.payload || undefined,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            dateColor: action.payload || undefined,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              dateColor: action.payload || undefined,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: dateColorUpdatedStudy,
@@ -486,15 +529,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         cardStyleEnabled: action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          style: {
-            ...current.study.style,
-            cardStyleEnabled: action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            style: {
+              ...current.study.style,
+              cardStyleEnabled: action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: cardStyleUpdatedStudy,
@@ -505,15 +551,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         weatherAlertEnabled: !!action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          alerts: {
-            ...current.study.alerts,
-            weatherAlert: !!action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            alerts: {
+              ...current.study.alerts,
+              weatherAlert: !!action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: alertUpdatedStudy,
@@ -524,15 +573,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         minutelyPrecipEnabled: !!action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          alerts: {
-            ...current.study.alerts,
-            minutelyPrecip: !!action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            alerts: {
+              ...current.study.alerts,
+              minutelyPrecip: !!action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: precipUpdatedStudy,
@@ -543,15 +595,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         errorPopupEnabled: !!action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          alerts: {
-            ...current.study.alerts,
-            errorPopup: !!action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            alerts: {
+              ...current.study.alerts,
+              errorPopup: !!action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: errorPopupUpdatedStudy,
@@ -562,15 +617,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         errorCenterMode: action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          alerts: {
-            ...current.study.alerts,
-            errorCenterMode: action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            alerts: {
+              ...current.study.alerts,
+              errorCenterMode: action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       setErrorCenterMode(action.payload);
       return {
         ...state,
@@ -582,15 +640,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         airQualityAlertEnabled: !!action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          alerts: {
-            ...current.study.alerts,
-            airQuality: !!action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            alerts: {
+              ...current.study.alerts,
+              airQuality: !!action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: airQualityUpdatedStudy,
@@ -601,15 +662,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         sunriseSunsetAlertEnabled: !!action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          alerts: {
-            ...current.study.alerts,
-            sunriseSunset: !!action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            alerts: {
+              ...current.study.alerts,
+              sunriseSunset: !!action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: sunriseSunsetUpdatedStudy,
@@ -620,15 +684,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state.study,
         classEndForecastEnabled: !!action.payload,
       };
-      updateAppSettings((current) => ({
-        study: {
-          ...current.study,
-          alerts: {
-            ...current.study.alerts,
-            classEndForecast: !!action.payload,
+      checkedSettingsSave(
+        action.type,
+        updateAppSettings((current) => ({
+          study: {
+            ...current.study,
+            alerts: {
+              ...current.study.alerts,
+              classEndForecast: !!action.payload,
+            },
           },
-        },
-      }));
+        }))
+      );
       return {
         ...state,
         study: classEndForecastUpdatedStudy,
@@ -846,7 +913,7 @@ interface AppContextProviderProps {
  * @param children 子组件
  */
 export function AppContextProvider({ children }: AppContextProviderProps) {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+  const [state, dispatch] = useReducer(withPrecheckMiddleware(appReducer), initialState);
 
   return (
     <AppStateContext.Provider value={state}>

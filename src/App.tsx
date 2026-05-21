@@ -9,6 +9,7 @@ import { useNoiseStream } from "./hooks/useNoiseStream";
 import { ClockPage } from "./pages/ClockPage/ClockPage";
 import { shouldShowAnnouncement } from "./utils/announcementStorage";
 import { getAppSettings } from "./utils/appSettings";
+import { initEventTracer } from "./utils/precheck";
 import { hasSeenTour } from "./utils/tour";
 
 /**
@@ -29,6 +30,8 @@ export function App() {
    * 在组件首次挂载时触发
    */
   useEffect(() => {
+    initEventTracer();
+
     // 直接触发进入动画
     setShowEnterAnimation(true);
 

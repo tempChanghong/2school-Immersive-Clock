@@ -10,6 +10,7 @@ import {
   subscribeErrorCenter,
   type ErrorCenterMode,
 } from "../../../utils/errorCenter";
+import { exportDiagnosticReportJson } from "../../../utils/precheck";
 import { startTour } from "../../../utils/tour";
 import { getWeatherCache } from "../../../utils/weatherStorage";
 import {
@@ -247,6 +248,34 @@ const AboutSettingsPanel: React.FC<AboutSettingsPanelProps> = ({ onRegisterSave 
     }
   }, [records]);
 
+  /**
+   * 导出预检诊断信息
+   */
+  const handleExportDiagnostic = useCallback(() => {
+    setNotice("");
+    try {
+      const json = exportDiagnosticReportJson();
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "immersive-clock-diagnostic.json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setNotice("诊断信息已导出。");
+    } catch (err) {
+      setNotice("导出诊断信息失败。");
+      const msg = err instanceof Error ? err.message : String(err);
+      window.dispatchEvent(
+        new CustomEvent("messagePopup:open", {
+          detail: { type: "error", title: "导出诊断信息失败", message: msg },
+        })
+      );
+    }
+  }, []);
+
   return (
     <div id="about-panel" role="tabpanel" aria-labelledby="about">
       <FormSection title="项目信息">
@@ -382,6 +411,9 @@ const AboutSettingsPanel: React.FC<AboutSettingsPanelProps> = ({ onRegisterSave 
               </FormButton>
               <FormButton variant="secondary" size="md" onClick={handleExportErrorRecords}>
                 导出记录
+              </FormButton>
+              <FormButton variant="secondary" size="md" onClick={handleExportDiagnostic}>
+                导出诊断信息
               </FormButton>
               <FormButton variant="danger" size="md" onClick={handleClearErrorRecords}>
                 清空记录
