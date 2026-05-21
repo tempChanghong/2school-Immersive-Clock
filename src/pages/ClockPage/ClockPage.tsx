@@ -19,7 +19,11 @@ import { useClassworksSocket } from "../../hooks/useClassworksSocket";
 import schoolLogo from "../../icons/school.png";
 import type { MessagePopupOpenDetail, MessagePopupType } from "../../types/messagePopup";
 import { hexToRgba } from "../../utils/colorUtils";
-import { readStudyBackground } from "../../utils/studyBackgroundStorage";
+import {
+  BACKGROUND_INDEXEDDB_MARKER,
+  loadBackgroundImageFromIndexedDB,
+  readStudyBackground,
+} from "../../utils/studyBackgroundStorage";
 import { startTimeSyncManager } from "../../utils/timeSync";
 import { startTour, isTourActive } from "../../utils/tour";
 
@@ -52,6 +56,27 @@ export function ClockPage() {
   >([]);
 
   const [backgroundSettings, setBackgroundSettings] = useState(() => readStudyBackground());
+  const [loadedBgImageUrl, setLoadedBgImageUrl] = useState<string | null>(null);
+
+  // 当背景设置指示图片在 IndexedDB 中时，异步加载
+  useEffect(() => {
+    if (
+      backgroundSettings.type === "image" &&
+      backgroundSettings.imageDataUrl === BACKGROUND_INDEXEDDB_MARKER
+    ) {
+      loadBackgroundImageFromIndexedDB()
+        .then((url) => setLoadedBgImageUrl(url))
+        .catch(() => setLoadedBgImageUrl(null));
+    } else if (
+      backgroundSettings.type === "image" &&
+      backgroundSettings.imageDataUrl &&
+      backgroundSettings.imageDataUrl !== BACKGROUND_INDEXEDDB_MARKER
+    ) {
+      setLoadedBgImageUrl(backgroundSettings.imageDataUrl);
+    } else {
+      setLoadedBgImageUrl(null);
+    }
+  }, [backgroundSettings.imageDataUrl, backgroundSettings.type]);
 
   // Initialize Classworks Socket connection map to app state
   useClassworksSocket();
@@ -322,8 +347,8 @@ export function ClockPage() {
     const style: React.CSSProperties = {};
     // 只有自习模式有背景配置功能（目前），如果需要的话可以配置其他模式兼容
     if (mode === "study" && backgroundSettings) {
-      if (backgroundSettings.type === "image" && backgroundSettings.imageDataUrl) {
-        style.backgroundImage = `url(${backgroundSettings.imageDataUrl})`;
+      if (backgroundSettings.type === "image" && loadedBgImageUrl) {
+        style.backgroundImage = `url(${loadedBgImageUrl})`;
         style.backgroundSize = "cover";
         style.backgroundPosition = "center";
         style.backgroundRepeat = "no-repeat";

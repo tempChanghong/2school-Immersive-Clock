@@ -1,5 +1,9 @@
 import { getAppSettings, resetAppSettings, updateStudySettings } from "./appSettings";
 import { logger } from "./logger";
+import {
+  BACKGROUND_INDEXEDDB_MARKER,
+  saveBackgroundImageToIndexedDB,
+} from "./studyBackgroundStorage";
 
 const LEGACY_KEYS = [
   "quote-auto-refresh-interval",
@@ -107,7 +111,7 @@ function hasExplicitScheduleInRawAppSettings(rawSettings: string | null): boolea
   }
 }
 
-export function initializeStorage() {
+export async function initializeStorage() {
   logger.info("Initializing storage...");
 
   // 1. 检查是否存在 AppSettings
@@ -148,6 +152,49 @@ export function initializeStorage() {
 
   if (cleanedCount > 0) {
     logger.info(`Cleaned up ${cleanedCount} legacy storage keys.`);
+  }
+
+  // 3.5 迁移：背景图片 base64 → IndexedDB
+  // 当 AppSettings 中 study.background.imageDataUrl 包含实际的 base64 图片数据时，
+  // 将其迁移到 IndexedDB 并将 AppSettings 中的字段替换为标记值，
+  // 从而释放 localStorage 配额空间
+  try {
+    const settings = getAppSettings();
+    const bg = settings?.study?.background;
+    if (
+      bg &&
+      bg.type === "image" &&
+      typeof bg.imageDataUrl === "string" &&
+      bg.imageDataUrl.length > 100 &&
+      bg.imageDataUrl !== BACKGROUND_INDEXEDDB_MARKER &&
+      bg.imageDataUrl.startsWith("data:image/")
+    ) {
+      const dataUrl = bg.imageDataUrl;
+      // 尝试迁移到 IndexedDB
+      try {
+        await saveBackgroundImageToIndexedDB(dataUrl);
+        // 迁移成功后更新 AppSettings
+        updateStudySettings({
+          background: { ...bg, imageDataUrl: BACKGROUND_INDEXEDDB_MARKER },
+        });
+        logger.info("背景图片已从 localStorage 迁移到 IndexedDB");
+      } catch (migrateError) {
+        // 迁移失败时保留原数据，下次启动重试
+        logger.warn("背景图片迁移到 IndexedDB 失败，保留原 localStorage 数据:", migrateError);
+        // 通过 Toast 通知用户
+        window.dispatchEvent(
+          new CustomEvent("settings-toast", {
+            detail: {
+              type: "warning",
+              message: "背景图片存储优化失败，图片仍可使用但可能影响其他设置的保存。",
+              duration: 8000,
+            },
+          })
+        );
+      }
+    }
+  } catch (bgMigrateError) {
+    logger.warn("背景图片迁移检查失败:", bgMigrateError);
   }
 
   // 4. 校验配置完整性（简单检查）

@@ -3,7 +3,12 @@ import React, { useCallback, useEffect, useState } from "react";
 import { DEFAULT_NOISE_REPORT_RETENTION_DAYS } from "../../../constants/noiseReport";
 import { useAppState } from "../../../contexts/AppContext";
 import { useNoiseStream } from "../../../hooks/useNoiseStream";
-import { getAppSettings, updateNoiseSettings } from "../../../utils/appSettings";
+import { useSettingsToast } from "../../../hooks/useSettingsToast";
+import {
+  getAppSettings,
+  SettingsSaveResult,
+  updateNoiseSettings,
+} from "../../../utils/appSettings";
 import { pushErrorCenterRecord } from "../../../utils/errorCenter";
 import { logger } from "../../../utils/logger";
 import {
@@ -58,6 +63,7 @@ export interface StudySettingsPanelProps {
  */
 export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegisterSave }) => {
   const { study } = useAppState();
+  const { showSuccess, showError } = useSettingsToast();
   const [_effectiveBaselineRms, setEffectiveBaselineRms] = useState<number>(() => {
     return getAppSettings().noiseControl.baselineRms ?? 0;
   });
@@ -422,28 +428,40 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
   // 注册保存：在父组件点击保存时统一写入持久化存储
   useEffect(() => {
     onRegisterSave?.(() => {
+      let hasError = false;
       // 噪音基线：统一持久化为 RMS 与显示DB
+      let noiseResult: SettingsSaveResult;
       if (baselineRms > 0) {
-        updateNoiseSettings({
+        noiseResult = updateNoiseSettings({
           baselineRms,
           baselineDisplayDb: draftManualBaselineDb,
         });
-        setEffectiveBaselineRms(baselineRms);
-        // 广播基线更新，便于其他组件立即刷新
-        broadcastSettingsEvent(SETTINGS_EVENTS.NoiseBaselineUpdated, {
-          baselineDb: draftManualBaselineDb,
-          baselineRms,
-        });
+        if (noiseResult.success) {
+          setEffectiveBaselineRms(baselineRms);
+          // 广播基线更新，便于其他组件立即刷新
+          broadcastSettingsEvent(SETTINGS_EVENTS.NoiseBaselineUpdated, {
+            baselineDb: draftManualBaselineDb,
+            baselineRms,
+          });
+        } else {
+          hasError = true;
+          showError(noiseResult.error || "噪音设置保存失败");
+        }
       } else {
-        updateNoiseSettings({
+        noiseResult = updateNoiseSettings({
           baselineRms: 0,
           baselineDisplayDb: 0,
         });
-        setEffectiveBaselineRms(0);
-        broadcastSettingsEvent(SETTINGS_EVENTS.NoiseBaselineUpdated, {
-          baselineDb: 0,
-          baselineRms: 0,
-        });
+        if (noiseResult.success) {
+          setEffectiveBaselineRms(0);
+          broadcastSettingsEvent(SETTINGS_EVENTS.NoiseBaselineUpdated, {
+            baselineDb: 0,
+            baselineRms: 0,
+          });
+        } else {
+          hasError = true;
+          showError(noiseResult.error || "噪音设置保存失败");
+        }
       }
 
       // 自动弹出报告设置
@@ -462,6 +480,11 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
         alertSoundEnabled: draftAlertSoundEnabled,
         microphoneDeviceId: draftMicrophoneDeviceId,
       });
+
+      // 汇总反馈
+      if (!hasError) {
+        showSuccess("监测设置已保存");
+      }
     });
   }, [
     onRegisterSave,
@@ -475,6 +498,8 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
     draftAvgWindowSec,
     draftAlertSoundEnabled,
     draftMicrophoneDeviceId,
+    showSuccess,
+    showError,
   ]);
 
   // 课表重置功能已迁移到基础设置面板

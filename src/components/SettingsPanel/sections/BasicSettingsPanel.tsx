@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import { useAppState, useAppDispatch } from "../../../contexts/AppContext";
+import { useSettingsToast } from "../../../hooks/useSettingsToast";
 import { AppMode, CountdownItem } from "../../../types";
 import {
   getAppSettings,
@@ -9,8 +10,15 @@ import {
   updateStudySettings,
   updateTimeSyncSettings,
 } from "../../../utils/appSettings";
+import { logger } from "../../../utils/logger";
 import { resolveStartupMode } from "../../../utils/startupMode";
-import { readStudyBackground, saveStudyBackground } from "../../../utils/studyBackgroundStorage";
+import {
+  BACKGROUND_INDEXEDDB_MARKER,
+  loadBackgroundImageFromIndexedDB,
+  readStudyBackground,
+  saveBackgroundImageToIndexedDB,
+  saveStudyBackground,
+} from "../../../utils/studyBackgroundStorage";
 import {
   importFontFile,
   loadImportedFonts,
@@ -58,6 +66,42 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
 }) => {
   const { study } = useAppState();
   const dispatch = useAppDispatch();
+  const { showSuccess, showError, showWarning } = useSettingsToast();
+
+  /** 允许的图片 MIME 类型白名单 */
+  const ALLOWED_IMAGE_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/bmp",
+    "image/svg+xml",
+  ];
+
+  /** 允许的图片文件扩展名白名单 */
+  const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".jfif", ".png", ".webp", ".gif", ".bmp", ".svg"];
+
+  /** 原始图片文件大小上限（5MB，纯客户端处理，需控制内存占用） */
+  const MAX_FILE_SIZE_MB = 5;
+
+  /**
+   * 验证上传的图片文件格式与大小
+   * @param file 待验证的文件
+   * @returns 验证结果，包含是否有效以及错误消息
+   */
+  const validateImageFile = (file: File): { valid: boolean; error?: string } => {
+    const ext = "." + (file.name.split(".").pop()?.toLowerCase() ?? "");
+    if (!ALLOWED_EXTENSIONS.includes(ext) && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return { valid: false, error: `不支持的图片格式: ${ext}` };
+    }
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      return {
+        valid: false,
+        error: `图片文件过大（最大 ${MAX_FILE_SIZE_MB}MB），请先压缩后再上传`,
+      };
+    }
+    return { valid: true };
+  };
 
   const [startupMode, setStartupMode] = useState<AppMode>("clock");
 
@@ -254,7 +298,23 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     setBgType(bg.type);
     if (bg.color) setBgColor(bg.color);
     setBgAlpha(typeof bg.colorAlpha === "number" ? bg.colorAlpha : 1);
-    setBgImage(bg.imageDataUrl ?? null);
+    if (
+      bg.imageDataUrl &&
+      bg.imageDataUrl !== BACKGROUND_INDEXEDDB_MARKER &&
+      bg.imageDataUrl.startsWith("data:image/")
+    ) {
+      setBgImage(bg.imageDataUrl);
+    } else if (bg.imageDataUrl === BACKGROUND_INDEXEDDB_MARKER) {
+      // 从 IndexedDB 异步加载背景图片
+      setBgImage(null);
+      loadBackgroundImageFromIndexedDB()
+        .then((url) => {
+          if (url) setBgImage(url);
+        })
+        .catch(() => {});
+    } else {
+      setBgImage(null);
+    }
     setBgImageFileName("");
 
     const nextDigitColor = study.digitColor ?? "";
@@ -357,6 +417,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
   // 注册保存动作：统一在父组件保存时派发
   useEffect(() => {
     onRegisterSave?.(() => {
+      let hasError = false;
       // 倒计时模式映射到旧字段：多事件作为自定义类型
       const nextType: "gaokao" | "custom" = countdownMode === "gaokao" ? "gaokao" : "custom";
       dispatch({ type: "SET_COUNTDOWN_TYPE", payload: nextType });
@@ -377,7 +438,7 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
       } else {
         dispatch({
           type: "SET_COUNTDOWN_DIGIT_COLOR",
-          payload: countdownStyleMode === "custom" ? digitColor || undefined : undefined,
+          payload: countdownStyleMode === "custom" ? digitColor || "#03DAC6" : undefined,
         });
         dispatch({
           type: "SET_COUNTDOWN_DIGIT_OPACITY",
@@ -393,13 +454,37 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
         payload: dateColorMode === "custom" ? dateColor : undefined,
       });
       dispatch({ type: "SET_STUDY_CARD_STYLE", payload: draftCardStyleEnabled });
-      // 保存背景设置
-      saveStudyBackground({
-        type: bgType,
-        color: bgType === "color" ? bgColor : undefined,
-        colorAlpha: bgType === "color" ? bgAlpha : undefined,
-        imageDataUrl: bgType === "image" ? (bgImage ?? undefined) : undefined,
-      });
+
+      // 保存背景设置：图片类型存入 IndexedDB，AppSettings 中仅保留标记值
+      if (bgType === "image" && bgImage) {
+        const bgResult = saveStudyBackground({
+          type: bgType,
+          imageDataUrl: BACKGROUND_INDEXEDDB_MARKER,
+        });
+        if (!bgResult.success) {
+          hasError = true;
+          showError(bgResult.error || "背景设置保存失败");
+        }
+        // 异步存入 IndexedDB
+        (async () => {
+          try {
+            await saveBackgroundImageToIndexedDB(bgImage);
+          } catch (err) {
+            logger.warn("保存背景图片到 IndexedDB 失败:", err);
+            showWarning("背景图片保存失败，请重试");
+          }
+        })();
+      } else {
+        const bgResult = saveStudyBackground({
+          type: bgType,
+          color: bgType === "color" ? bgColor : undefined,
+          colorAlpha: bgType === "color" ? bgAlpha : undefined,
+        });
+        if (!bgResult.success) {
+          hasError = true;
+          showError(bgResult.error || "背景设置保存失败");
+        }
+      }
       // 通知学习页面刷新背景
       window.dispatchEvent(new CustomEvent("study-background-updated"));
 
@@ -410,10 +495,12 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
             id: "gaokao-default",
             kind: "gaokao",
             name: "高考倒计时",
-            bgColor: countdownStyleMode === "custom" ? singleBgColor || undefined : undefined,
+            bgColor: countdownStyleMode === "custom" ? singleBgColor || "#121212" : undefined,
             bgOpacity: countdownStyleMode === "custom" ? singleBgOpacity : 0,
-            textColor: countdownStyleMode === "custom" ? singleTextColor || undefined : undefined,
+            textColor: countdownStyleMode === "custom" ? singleTextColor || "#E0E0E0" : undefined,
             textOpacity: countdownStyleMode === "custom" ? singleTextOpacity : 1,
+            digitColor: countdownStyleMode === "custom" ? digitColor || "#03DAC6" : undefined,
+            digitOpacity: countdownStyleMode === "custom" ? digitOpacity : undefined,
             order: 0,
           },
         ];
@@ -425,10 +512,12 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
             kind: "custom",
             name: (draftCustomName && draftCustomName.trim()) || "自定义事件",
             targetDate: (draftCustomDate && draftCustomDate.trim()) || "",
-            bgColor: countdownStyleMode === "custom" ? singleBgColor || undefined : undefined,
+            bgColor: countdownStyleMode === "custom" ? singleBgColor || "#121212" : undefined,
             bgOpacity: countdownStyleMode === "custom" ? singleBgOpacity : 0,
-            textColor: countdownStyleMode === "custom" ? singleTextColor || undefined : undefined,
+            textColor: countdownStyleMode === "custom" ? singleTextColor || "#E0E0E0" : undefined,
             textOpacity: countdownStyleMode === "custom" ? singleTextOpacity : 1,
+            digitColor: countdownStyleMode === "custom" ? digitColor || "#03DAC6" : undefined,
+            digitOpacity: countdownStyleMode === "custom" ? digitOpacity : undefined,
             order: 0,
           },
         ];
@@ -438,9 +527,11 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
         countdownSaveRef.current?.();
       }
       // 记录最近启用的模式，确保下次打开直接显示
-      try {
-        updateStudySettings({ countdownMode });
-      } catch {}
+      const modeResult = updateStudySettings({ countdownMode });
+      if (!modeResult.success) {
+        hasError = true;
+        showError(modeResult.error || "倒计时模式保存失败");
+      }
 
       // 保存字体设置（函数级注释：根据选择与自定义输入计算最终的 font-family 并派发到全局状态）
       const resolveFont = (mode: "default" | "custom", selected: string): string | undefined => {
@@ -453,15 +544,23 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
       dispatch({ type: "SET_STUDY_NUMERIC_FONT", payload: nextNumeric });
       dispatch({ type: "SET_STUDY_TEXT_FONT", payload: nextText });
 
-      updateGeneralSettings({ startup: { initialMode: startupMode } });
+      const generalResult = updateGeneralSettings({ startup: { initialMode: startupMode } });
+      if (!generalResult.success) {
+        hasError = true;
+        showError(generalResult.error || "启动设置保存失败");
+      }
 
-      updatePerformanceSettings({
+      const perfResult = updatePerformanceSettings({
         disableBlurEffects: perfDisableBlur,
         throttleAnimations: perfThrottleAnim,
         reduceTimerPrecision: perfReduceTimer,
       });
+      if (!perfResult.success) {
+        hasError = true;
+        showError(perfResult.error || "性能设置保存失败");
+      }
 
-      updateTimeSyncSettings((current) => ({
+      const tsResult = updateTimeSyncSettings((current) => ({
         enabled: timeSyncEnabled,
         provider: timeSyncProvider,
         httpDateUrl: timeSyncHttpDateUrl.trim() || current.httpDateUrl,
@@ -477,6 +576,15 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
           Math.round((Number.isFinite(timeSyncAutoIntervalMin) ? timeSyncAutoIntervalMin : 60) * 60)
         ),
       }));
+      if (!tsResult.success) {
+        hasError = true;
+        showError(tsResult.error || "校时设置保存失败");
+      }
+
+      // 汇总反馈
+      if (!hasError) {
+        showSuccess("设置已保存");
+      }
     });
   }, [
     onRegisterSave,
@@ -519,6 +627,9 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
     timeSyncManualOffsetSec,
     timeSyncAutoEnabled,
     timeSyncAutoIntervalMin,
+    showSuccess,
+    showError,
+    showWarning,
   ]);
 
   /** 构建字体选择列表（函数级注释：合并已导入字体与内置字体，供下拉选择使用） */
@@ -1175,28 +1286,36 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
         {bgType === "image" && (
           <>
             <p className={styles.helpText} style={{ color: "#ffb74d" }}>
-              💡 提示：设置或更换图片后，请
-              <strong style={{ margin: "0 4px", color: "#ffa726" }}>手动刷新网页</strong>
-              以完美应用更改。
+              支持 JPG、PNG、WebP、GIF、BMP、SVG 格式，单文件最大 {MAX_FILE_SIZE_MB}MB。
+              图片将自动压缩后存入本地存储。
             </p>
             <FormRow gap="sm">
               <FormFilePicker
                 label="背景图片"
-                accept="image/*"
+                accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.svg"
                 fileName={bgImageFileName}
                 placeholder="未选择图片"
                 buttonText="选择图片"
                 onFileChange={(file) => {
                   if (!file) return;
+                  const validation = validateImageFile(file);
+                  if (!validation.valid) {
+                    showError(validation.error || "图片文件无效");
+                    return;
+                  }
                   setBgImageFileName(file.name);
                   const reader = new FileReader();
                   reader.onload = (e) => {
                     const img = new Image();
+                    img.onerror = () => {
+                      showError("图片加载失败，请确认文件未损坏且格式受支持");
+                      setBgImageFileName("");
+                    };
                     img.onload = () => {
                       const canvas = document.createElement("canvas");
                       let width = img.width;
                       let height = img.height;
-                      const maxSize = 2560; // 适当限制以防极端分辨率
+                      const maxSize = 2560;
                       if (width > height && width > maxSize) {
                         height = Math.round((height * maxSize) / width);
                         width = maxSize;
@@ -1211,15 +1330,31 @@ export const BasicSettingsPanel: React.FC<BasicSettingsPanelProps> = ({
                         ctx.fillStyle = "#121212";
                         ctx.fillRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
-                        // 强制输出 JPEG 格式加上 0.7 压缩避免 base64 超出 LocalStorage 容量 (5M)
-                        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75);
+                        let compressedDataUrl: string;
+                        try {
+                          compressedDataUrl = canvas.toDataURL("image/jpeg", 0.6);
+                          if (!compressedDataUrl || compressedDataUrl === "data:,") {
+                            compressedDataUrl = canvas.toDataURL("image/png");
+                          }
+                        } catch {
+                          try {
+                            compressedDataUrl = canvas.toDataURL("image/png");
+                          } catch (pngError) {
+                            logger.warn("Canvas 图片转码失败:", pngError);
+                            showError("图片格式转换失败，请尝试使用 JPG 或 PNG 格式");
+                            return;
+                          }
+                        }
                         setBgImage(compressedDataUrl);
                       } else {
-                        // Fallback
                         setBgImage(reader.result as string);
                       }
                     };
                     img.src = e.target?.result as string;
+                  };
+                  reader.onerror = () => {
+                    showError("文件读取失败，请重试");
+                    setBgImageFileName("");
                   };
                   reader.readAsDataURL(file);
                 }}

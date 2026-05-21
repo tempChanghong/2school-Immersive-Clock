@@ -17,8 +17,8 @@ if (import.meta.env.PROD) {
   Clarity.init("sfsiwls4dz");
 }
 
-// 在应用启动前初始化本地存储
-initializeStorage();
+// 在应用启动前初始化本地存储（背景图片迁移为异步操作，不阻塞渲染）
+void initializeStorage();
 setErrorCenterMode(getAppSettings().study.alerts.errorCenterMode);
 initErrorCenterGlobalCapture();
 

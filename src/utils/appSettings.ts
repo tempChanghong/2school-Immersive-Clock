@@ -351,11 +351,24 @@ export function getAppSettings(): AppSettings {
 }
 
 /**
+ * 设置保存结果
+ * - `success`：是否保存成功
+ * - `error`：失败时的用户可读错误消息
+ * - `quotaExceeded`：是否为存储配额超限导致的失败
+ */
+export interface SettingsSaveResult {
+  success: boolean;
+  error?: string;
+  quotaExceeded?: boolean;
+}
+
+/**
  * 局部更新 AppSettings 配置
+ * 返回保存结果，调用方可据此向用户提供反馈
  */
 export function updateAppSettings(
   partial: DeepPartial<AppSettings> | ((current: AppSettings) => DeepPartial<AppSettings>)
-): void {
+): SettingsSaveResult {
   try {
     const current = getAppSettings();
     let updates: DeepPartial<AppSettings>;
@@ -459,43 +472,73 @@ export function updateAppSettings(
     }
 
     localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(nextSettings));
+    return { success: true };
   } catch (error) {
     logger.error("Failed to save AppSettings", error);
+    const isQuota =
+      error instanceof DOMException &&
+      (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED");
+    return {
+      success: false,
+      error: isQuota ? "存储空间不足，请清理背景图片或其他大体积数据" : "设置保存失败，请重试",
+      quotaExceeded: isQuota,
+    };
   }
 }
 
 /**
  * 将 AppSettings 重置为默认值
+ * 返回保存结果，调用方可据此向用户提供反馈
  */
-export function resetAppSettings(): void {
+export function resetAppSettings(): SettingsSaveResult {
   try {
     const settings = {
       ...DEFAULT_SETTINGS,
       modifiedAt: Date.now(),
     };
     localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(settings));
+    return { success: true };
   } catch (error) {
     logger.error("Failed to reset AppSettings", error);
+    return {
+      success: false,
+      error: "重置设置失败",
+    };
   }
 }
 
 /**
  * 帮助方法：更新某个特定分区（例如学习设置）
+ * 返回保存结果，调用方可据此向用户提供反馈
  */
-export function updateStudySettings(updates: DeepPartial<AppSettings["study"]>): void {
-  updateAppSettings({
+export function updateStudySettings(
+  updates: DeepPartial<AppSettings["study"]>
+): SettingsSaveResult {
+  return updateAppSettings({
     study: updates,
   });
 }
 
-export function updateGeneralSettings(updates: DeepPartial<AppSettings["general"]>): void {
-  updateAppSettings({
+/**
+ * 更新通用设置分区
+ * 返回保存结果，调用方可据此向用户提供反馈
+ */
+export function updateGeneralSettings(
+  updates: DeepPartial<AppSettings["general"]>
+): SettingsSaveResult {
+  return updateAppSettings({
     general: updates,
   });
 }
 
-export function updatePerformanceSettings(updates: DeepPartial<AppSettings["performance"]>): void {
-  updateAppSettings({
+/**
+ * 更新性能设置分区
+ * 返回保存结果，调用方可据此向用户提供反馈
+ */
+export function updatePerformanceSettings(
+  updates: DeepPartial<AppSettings["performance"]>
+): SettingsSaveResult {
+  return updateAppSettings({
     performance: updates,
   });
 }
@@ -503,13 +546,14 @@ export function updatePerformanceSettings(updates: DeepPartial<AppSettings["perf
 /**
  * 更新网络校时设置
  * 对 timeSync 进行深合并，避免覆盖丢字段
+ * 返回保存结果，调用方可据此向用户提供反馈
  */
 export function updateTimeSyncSettings(
   updates:
     | Partial<AppSettings["general"]["timeSync"]>
     | ((current: AppSettings["general"]["timeSync"]) => Partial<AppSettings["general"]["timeSync"]>)
-): void {
-  updateAppSettings((current) => {
+): SettingsSaveResult {
+  return updateAppSettings((current) => {
     const base = current.general.timeSync;
     const patch = typeof updates === "function" ? updates(base) : updates;
     return {
@@ -521,8 +565,14 @@ export function updateTimeSyncSettings(
   });
 }
 
-export function updateNoiseSettings(updates: DeepPartial<AppSettings["noiseControl"]>): void {
-  updateAppSettings((current) => ({
+/**
+ * 更新噪音控制设置分区
+ * 返回保存结果，调用方可据此向用户提供反馈
+ */
+export function updateNoiseSettings(
+  updates: DeepPartial<AppSettings["noiseControl"]>
+): SettingsSaveResult {
+  return updateAppSettings((current) => ({
     noiseControl: { ...current.noiseControl, ...updates },
   }));
 }

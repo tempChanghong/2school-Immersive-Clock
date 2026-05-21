@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import styles from "./App.module.css";
 import AnnouncementModal from "./components/AnnouncementModal";
 import { Confetti } from "./components/Confetti/Confetti";
+import { SettingsToast } from "./components/SettingsPanel/SettingsToast";
 import { useNoiseStream } from "./hooks/useNoiseStream";
 import { ClockPage } from "./pages/ClockPage/ClockPage";
 import { shouldShowAnnouncement } from "./utils/announcementStorage";
@@ -127,6 +128,9 @@ export function App() {
       </Routes>
 
       {showTourConfetti && <Confetti />}
+
+      {/* 全局 Toast 通知容器，始终渲染以接收来自各处的通知 */}
+      <SettingsToast />
 
       {/* 公告弹窗 */}
       <AnnouncementModal
