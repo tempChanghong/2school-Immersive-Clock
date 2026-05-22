@@ -130,6 +130,7 @@ export interface AppSettings {
     baselineRms: number;
     reportAutoPopup: boolean;
     reportRetentionDays: number;
+    autoDownloadReport: boolean;
     alertSoundEnabled: boolean;
   };
 }
@@ -238,6 +239,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     baselineRms: 0.000414581087327115,
     reportAutoPopup: true,
     reportRetentionDays: DEFAULT_NOISE_REPORT_RETENTION_DAYS,
+    autoDownloadReport: true,
     alertSoundEnabled: false,
   },
   performance: {

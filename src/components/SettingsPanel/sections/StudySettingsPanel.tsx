@@ -17,6 +17,7 @@ import {
 } from "../../../utils/noiseControlSettings";
 import {
   estimateMaxRetentionDaysByQuota,
+  getAutoDownloadReportSetting,
   getNoiseReportSettings,
   setAutoPopupSetting,
   setRetentionDaysSetting,
@@ -82,6 +83,9 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
   );
   const [reportRetentionDays, setReportRetentionDays] = useState<number>(
     () => getNoiseReportSettings().retentionDays
+  );
+  const [autoDownloadReport, setAutoDownloadReport] = useState<boolean>(() =>
+    getAutoDownloadReportSetting()
   );
   const [maxReportRetentionDays, setMaxReportRetentionDays] = useState<number | null>(null);
 
@@ -259,6 +263,7 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
     setNoiseBaseline(noiseSettings.baselineRms > 0 ? noiseSettings.baselineDisplayDb : 0);
     setAutoPopupReport(getNoiseReportSettings().autoPopup);
     setReportRetentionDays(getNoiseReportSettings().retentionDays);
+    setAutoDownloadReport(getAutoDownloadReportSetting());
     setDraftMaxNoiseLevel(currentControl.maxLevelDb);
     setDraftManualBaselineDb(currentControl.baselineDb);
     setDraftShowRealtimeDb(currentControl.showRealtimeDb);
@@ -471,6 +476,8 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
       } else {
         setRetentionDaysSetting(Math.max(1, reportRetentionDays));
       }
+      // 自动下载报告设置
+      updateNoiseSettings({ autoDownloadReport });
       // 噪音控制设置
       saveNoiseControlSettings({
         maxLevelDb: draftMaxNoiseLevel,
@@ -491,6 +498,7 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
     baselineRms,
     autoPopupReport,
     reportRetentionDays,
+    autoDownloadReport,
     maxReportRetentionDays,
     draftManualBaselineDb,
     draftMaxNoiseLevel,
@@ -711,6 +719,15 @@ export const StudySettingsPanel: React.FC<StudySettingsPanelProps> = ({ onRegist
             onChange={(e) => {
               const checked = e.target.checked;
               setAutoPopupReport(checked);
+            }}
+          />
+        </FormRow>
+        <FormRow gap="sm" align="center">
+          <FormCheckbox
+            label="课时结束后自动下载报告"
+            checked={autoDownloadReport}
+            onChange={(e) => {
+              setAutoDownloadReport(e.target.checked);
             }}
           />
         </FormRow>

@@ -8,7 +8,8 @@ import { CountdownItem } from "../../types";
 import { DEFAULT_SCHEDULE, StudyPeriod } from "../../types/studySchedule";
 import { hexToRgba } from "../../utils/colorUtils";
 import { formatClock } from "../../utils/formatTime";
-import { getAutoPopupSetting } from "../../utils/noiseReportSettings";
+import { buildNoiseReportData, downloadNoiseReport } from "../../utils/noiseReportDownloader";
+import { getAutoPopupSetting, getAutoDownloadReportSetting } from "../../utils/noiseReportSettings";
 import { createPrecheckLogger } from "../../utils/precheck";
 import { readStudyBackground } from "../../utils/studyBackgroundStorage";
 import { ensureInjectedFonts } from "../../utils/studyFontStorage";
@@ -42,6 +43,7 @@ export function Study() {
   const dismissedPeriodIdRef = useRef<string | null>(null);
   const forecastPopupRef = useRef<{ periodId: string; popupId: string } | null>(null);
   const lastForecastPopupPeriodIdRef = useRef<string | null>(null);
+  const autoDownloadedPeriodIdRef = useRef<string | null>(null);
 
   // 背景设置
   const [_backgroundSettings, setBackgroundSettings] = useState(readStudyBackground());
@@ -133,10 +135,22 @@ export function Study() {
         if (dismissedPeriodIdRef.current === p.id) {
           dismissedPeriodIdRef.current = null;
         }
+        // 课时结束后自动下载噪音报告
+        if (getAutoDownloadReportSetting() && autoDownloadedPeriodIdRef.current !== p.id) {
+          const reportData = buildNoiseReportData({ id: p.id, name: p.name, start, end });
+          if (reportData) {
+            downloadNoiseReport(reportData);
+          }
+          autoDownloadedPeriodIdRef.current = p.id;
+        }
       }
 
       // 正在本节课内，并且进入结束前1分钟窗口（[end-1min, end)）
       if (nowMin >= startMin && nowMin < endMin && endMin - nowMin <= 1) {
+        // 课时开始后，重置自动下载标记以备本课时结束时下载
+        if (autoDownloadedPeriodIdRef.current === p.id) {
+          autoDownloadedPeriodIdRef.current = null;
+        }
         // 检查是否启用自动弹出设置
         const autoPopupEnabled = getAutoPopupSetting();
 

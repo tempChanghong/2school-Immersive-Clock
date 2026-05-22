@@ -17,16 +17,18 @@ import { broadcastSettingsEvent, SETTINGS_EVENTS } from "./settingsEvents";
  * 噪音报告设置接口
  */
 export interface NoiseReportSettings {
-  autoPopup: boolean; // 是否自动弹出报告
-  retentionDays: number; // 历史数据保存天数
+  autoPopup: boolean;
+  retentionDays: number;
+  autoDownloadReport: boolean;
 }
 
 /**
  * 默认设置
  */
 const DEFAULT_SETTINGS: NoiseReportSettings = {
-  autoPopup: true, // 默认开启自动弹出
+  autoPopup: true,
   retentionDays: DEFAULT_NOISE_REPORT_RETENTION_DAYS,
+  autoDownloadReport: true,
 };
 
 function normalizeRetentionDays(value: unknown): number {
@@ -44,9 +46,11 @@ export function getNoiseReportSettings(): NoiseReportSettings {
   const noiseControl = getAppSettings().noiseControl;
   const autoPopup = noiseControl.reportAutoPopup;
   const retentionDays = normalizeRetentionDays(noiseControl.reportRetentionDays);
+  const autoDownloadReport = noiseControl.autoDownloadReport ?? DEFAULT_SETTINGS.autoDownloadReport;
   return {
     autoPopup: autoPopup ?? DEFAULT_SETTINGS.autoPopup,
     retentionDays,
+    autoDownloadReport,
   };
 }
 
@@ -65,6 +69,9 @@ export function saveNoiseReportSettings(settings: Partial<NoiseReportSettings>):
     }
     if (settings.retentionDays !== undefined) {
       updateNoiseSettings({ reportRetentionDays: normalizeRetentionDays(settings.retentionDays) });
+    }
+    if (settings.autoDownloadReport !== undefined) {
+      updateNoiseSettings({ autoDownloadReport: settings.autoDownloadReport });
     }
     // 广播：噪音报告设置更新
     broadcastSettingsEvent(SETTINGS_EVENTS.NoiseReportSettingsUpdated, { settings: newSettings });
@@ -91,6 +98,10 @@ export function setAutoPopupSetting(autoPopup: boolean): void {
 
 export function getRetentionDaysSetting(): number {
   return getNoiseReportSettings().retentionDays;
+}
+
+export function getAutoDownloadReportSetting(): boolean {
+  return getNoiseReportSettings().autoDownloadReport;
 }
 
 export function setRetentionDaysSetting(retentionDays: number): void {
@@ -142,6 +153,7 @@ export function resetNoiseReportSettings(): void {
     updateNoiseSettings({
       reportAutoPopup: DEFAULT_SETTINGS.autoPopup,
       reportRetentionDays: DEFAULT_SETTINGS.retentionDays,
+      autoDownloadReport: DEFAULT_SETTINGS.autoDownloadReport,
     });
     broadcastSettingsEvent(SETTINGS_EVENTS.NoiseReportSettingsUpdated, {
       settings: getNoiseReportSettings(),
