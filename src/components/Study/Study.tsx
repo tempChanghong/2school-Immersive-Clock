@@ -8,7 +8,8 @@ import { CountdownItem } from "../../types";
 import { DEFAULT_SCHEDULE, StudyPeriod } from "../../types/studySchedule";
 import { hexToRgba } from "../../utils/colorUtils";
 import { formatClock } from "../../utils/formatTime";
-import { buildNoiseReportData, downloadNoiseReport } from "../../utils/noiseReportDownloader";
+import { logger } from "../../utils/logger";
+import { buildNoiseReportData, downloadNoiseReportAsPdf } from "../../utils/noiseReportDownloader";
 import { getAutoPopupSetting, getAutoDownloadReportSetting } from "../../utils/noiseReportSettings";
 import { createPrecheckLogger } from "../../utils/precheck";
 import { readStudyBackground } from "../../utils/studyBackgroundStorage";
@@ -43,7 +44,8 @@ export function Study() {
   const dismissedPeriodIdRef = useRef<string | null>(null);
   const forecastPopupRef = useRef<{ periodId: string; popupId: string } | null>(null);
   const lastForecastPopupPeriodIdRef = useRef<string | null>(null);
-  const autoDownloadedPeriodIdRef = useRef<string | null>(null);
+  const autoDownloadedPeriodsRef = useRef<Set<string>>(new Set());
+  const lastDownloadTimeRef = useRef<number>(0);
 
   // 背景设置
   const [_backgroundSettings, setBackgroundSettings] = useState(readStudyBackground());
@@ -113,6 +115,8 @@ export function Study() {
 
     const now = getAdjustedDate();
     const nowMin = now.getHours() * 60 + now.getMinutes();
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const todayDateStr = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
 
     const toDate = (timeStr: string) => {
       const [h, m] = timeStr.split(":").map(Number);
@@ -135,23 +139,26 @@ export function Study() {
         if (dismissedPeriodIdRef.current === p.id) {
           dismissedPeriodIdRef.current = null;
         }
-        // 课时结束后自动下载噪音报告
-        if (getAutoDownloadReportSetting() && autoDownloadedPeriodIdRef.current !== p.id) {
-          const reportData = buildNoiseReportData({ id: p.id, name: p.name, start, end });
-          if (reportData) {
-            downloadNoiseReport(reportData);
+        // 课时结束后自动下载噪音报告 PDF
+        if (getAutoDownloadReportSetting()) {
+          const dedupKey = `${p.id}::${todayDateStr}`;
+          const alreadyDownloaded = autoDownloadedPeriodsRef.current.has(dedupKey);
+          const throttleOk = Date.now() - lastDownloadTimeRef.current >= 10_000;
+          if (!alreadyDownloaded && throttleOk) {
+            const reportData = buildNoiseReportData({ id: p.id, name: p.name, start, end });
+            if (reportData) {
+              lastDownloadTimeRef.current = Date.now();
+              autoDownloadedPeriodsRef.current.add(dedupKey);
+              downloadNoiseReportAsPdf(reportData).catch((err) => {
+                logger.error("自动下载噪音报告 PDF 失败:", err);
+              });
+            }
           }
-          autoDownloadedPeriodIdRef.current = p.id;
         }
       }
 
       // 正在本节课内，并且进入结束前1分钟窗口（[end-1min, end)）
       if (nowMin >= startMin && nowMin < endMin && endMin - nowMin <= 1) {
-        // 课时开始后，重置自动下载标记以备本课时结束时下载
-        if (autoDownloadedPeriodIdRef.current === p.id) {
-          autoDownloadedPeriodIdRef.current = null;
-        }
-        // 检查是否启用自动弹出设置
         const autoPopupEnabled = getAutoPopupSetting();
 
         // 若本课时已经弹出过，或被手动关闭过，或设置中禁用了自动弹出，则不再重复弹出
@@ -160,13 +167,13 @@ export function Study() {
         if (!alreadyPopped && !dismissed && autoPopupEnabled) {
           setReportPeriod({ id: p.id, name: p.name, start, end });
           setReportOpen(true);
-          setReportFromHistory(false); // 自动弹出不属于历史记录来源
+          setReportFromHistory(false);
           lastPopupPeriodIdRef.current = p.id;
         }
         break;
       }
     }
-  }, [currentTime, reportOpen]);
+  }, [currentTime]);
 
   useEffect(() => {
     if (!study.classEndForecastEnabled) return;

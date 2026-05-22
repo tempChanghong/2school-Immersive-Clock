@@ -1,481 +1,248 @@
-# 设置持久化 & 背景图片 & 错误反馈 修复规划书
+# 噪音报告自动下载功能 —— 缺陷分析与修复方案
 
 ## 问题概述
 
-当前项目存在三类互相关联的问题：
-
-1. **设置持久化 Bug**：倒计时字体（`numericFontFamily` / `textFontFamily`）、数字颜色（`digitColor`）等 `study.style` 字段保存后刷新页面被重置
-2. **背景图片格式兼容性 Bug**：上传 `.jfif`、`.webp` 等格式的背景图片后，刷新页面背景丢失
-3. **错误反馈机制缺失**：设置保存失败时无任何用户可见的错误提示
+"课时后自动下载噪音报告" 功能存在两个严重缺陷：
+1. **格式错误**：自动下载生成的是 `.html` 文件，而非使用项目内已有的 jsPDF + html2canvas 渲染管线生成 PDF
+2. **疯狂重复下载**：在浏览器允许多文件下载的情况下，报告会被无限重复下载
 
 ---
 
-## 部署环境约束（Vercel Hobby 免费版）
+## 缺陷 1：下载 HTML 而非 PDF
 
-> [!IMPORTANT]
-> 项目部署在 **Vercel Hobby（免费版）** 上，这是一个纯静态托管环境，对本次修复方案有以下直接约束：
+### 根因分析
 
-| 约束项 | 影响 |
-|-------|------|
-| **无后端服务** | 所有用户数据（设置、图片、字体）只能存储在客户端（localStorage / IndexedDB），没有服务器端备份或同步机制 |
-| **无 API Routes / Serverless Functions** | 不可能实现服务器端图片压缩或格式转换，所有图片处理必须在浏览器端通过 Canvas API 完成 |
-| **无服务器端存储** | 无法使用 Vercel Blob / KV / Postgres 等付费存储服务，用户数据一旦客户端丢失则不可恢复 |
-| **CDN 边缘缓存** | 静态资源通过 Vercel CDN 分发，PWA Service Worker 缓存策略需与 CDN 缓存协调 |
-| **构建产物为纯静态 SPA** | `vite build` 生成的 `dist/` 目录直接部署，运行时完全依赖浏览器环境 |
+项目中存在 **两套完全独立的报告生成管线**，彼此不互通：
 
-**对修复方案的影响：**
+| 管线 | 文件 | 调用场景 | 输出格式 |
+|------|------|----------|----------|
+| **管线 A** (HTML) | [noiseReportDownloader.ts](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/utils/noiseReportDownloader.ts) | 课时结束后自动下载 | `.html` |
+| **管线 B** (PDF) | [NoiseReportModal.tsx](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/components/NoiseReportModal/NoiseReportModal.tsx#L784-L834) | 用户在弹窗中手动点击"导出为 PDF" | `.pdf` |
 
-- **客户端存储是唯一选择** → IndexedDB 迁移方案（阶段二）的健壮性至关重要，必须包含完善的失败降级机制
-- **图片只能客户端压缩** → Canvas 压缩质量需更激进（建议 0.6-0.7），确保 base64/Blob 体积可控
-- **数据不可恢复** → 错误反馈（阶段四）必须在数据丢失**前**及时提醒用户，而非事后通知
-- **无需考虑服务端限制** → 不涉及 Vercel Hobby 的 Serverless 函数执行时间（10s）、带宽（100GB/月）等限制
+**自动下载路径** 调用的是 `noiseReportDownloader.ts` 中的 [downloadNoiseReport](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/utils/noiseReportDownloader.ts#L288-L305)：
+
+```typescript
+export function downloadNoiseReport(data: ReportData): void {
+  const html = generateReportHtml(data);  // ← 生成原始 HTML 字符串
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });  // ← MIME 为 text/html
+  const url = URL.createObjectURL(blob);
+  // ...
+  link.download = `噪音报告_${data.periodName}_${dateStr}.html`;  // ← 扩展名 .html
+  link.click();
+}
+```
+
+这是一个**简化版**的 HTML 静态报告模板（约 100 行内联 CSS + HTML），与 `NoiseReportModal` 中精心设计的离屏 PDF 渲染层（包含 SVG 图表、专业排版、学校徽章等 1500+ 行 JSX）完全无关。
+
+**真正的 PDF 导出** 位于 `NoiseReportModal` 组件内部的 [handleExportPDF](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/components/NoiseReportModal/NoiseReportModal.tsx#L784-L834)，使用 `html2canvas` 截图离屏 DOM，再通过 `jsPDF` 生成 A4 PDF。但此函数：
+- 是一个 React 组件内的异步事件处理器
+- 依赖已挂载的 `#pdf-export-container` DOM 节点
+- 无法在无 UI 上下文中被外部调用
+
+### 影响
+
+- 用户收到的自动下载文件是 `.html`，需要用浏览器打开，**不可直接打印**
+- HTML 报告内容极其简陋（无图表、无学校徽章、无详细分析），与手动导出的专业级 PDF 报告差距巨大
+- 用户认知错位：设置面板标注"自动下载报告"，用户期望获得 PDF
 
 ---
 
-## 根因分析
+## 缺陷 2：疯狂重复下载
 
-### 问题 1：设置被意外重置
+### 根因分析
 
-> [!IMPORTANT]
-> 根因在于 **localStorage 写入失败时静默吞错** + **设置面板保存逻辑可能存在竞态或覆盖问题**。
+自动下载逻辑位于 [Study.tsx 第 107-169 行](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/components/Study/Study.tsx#L107-L169) 的 `useEffect` 中。核心问题在于 **防重复机制 (`autoDownloadedPeriodIdRef`) 的状态管理存在竞态漏洞**。
 
-**分析路径：**
+#### 问题代码路径
 
-- `appSettings.ts` 中 `updateAppSettings()` 的深合并逻辑（第 356-465 行）本身对 `study.style` 的合并是正确的：
-  ```typescript
-  style: studyUpdates.style
-    ? { ...current.study.style, ...studyUpdates.style }
-    : current.study.style,
-  ```
-- 但 `localStorage.setItem()` 调用（第 461 行）在 `try/catch` 中只记录了日志，**未向调用方返回成功/失败状态**：
-  ```typescript
-  try {
-    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(nextSettings));
-  } catch (error) {
-    logger.error("Failed to save AppSettings", error); // ← 静默失败
+```typescript
+useEffect(() => {
+  // ...
+  for (const p of schedule) {
+    const endMin = end.getHours() * 60 + end.getMinutes();
+
+    // ❶ 课时已结束
+    if (nowMin >= endMin) {
+      // 触发下载
+      if (getAutoDownloadReportSetting() && autoDownloadedPeriodIdRef.current !== p.id) {
+        downloadNoiseReport(reportData);          // ← 触发下载
+        autoDownloadedPeriodIdRef.current = p.id;  // ← 标记"已下载"
+      }
+    }
+
+    // ❷ 课时结束前 1 分钟窗口
+    if (nowMin >= startMin && nowMin < endMin && endMin - nowMin <= 1) {
+      // 在此处重置了自动下载标记！！
+      if (autoDownloadedPeriodIdRef.current === p.id) {
+        autoDownloadedPeriodIdRef.current = null;  // ← 💥 BUG：提前清除了防重标记
+      }
+      break;
+    }
   }
-  ```
-- **关键场景**：当背景图片的 base64 数据 URL 存入 `study.background.imageDataUrl` 后，整个 AppSettings JSON 可能接近或超过 localStorage 配额（通常 5-10MB）。此时**后续的任何 `updateAppSettings()` 调用都会失败**（包括字体、颜色等设置的保存），但用户看不到任何错误。由于 Vercel Hobby 无后端存储，这意味着用户**将永久丢失这些设置修改**。
-- 此外需排查 `BasicSettingsPanel.tsx` 的保存逻辑是否存在：
-  - 保存时未包含所有已修改的 `style` 字段（遗漏字段）
-  - 多个设置面板同时保存导致的覆盖（竞态条件）
-  - 本地 state 初始化时未正确从 `getAppSettings()` 读取已存储的值
+}, [currentTime, reportOpen]);  // ← 每秒触发 + reportOpen 变化也触发
+```
 
-### 问题 2：背景图片格式兼容性
+#### 竞态场景复现
 
-> [!IMPORTANT]
-> 根因在于 **Canvas `toDataURL` 对特殊格式的兼容性** + **base64 存入 localStorage 的容量限制**。
+以默认课表 `19:15 ~ 21:30` 为例，假设当前有多个课时（如 `08:00~08:45`, `09:00~09:45`, ...）：
 
-**分析路径：**
+**场景 A — 多课时 for 循环遍历导致的重复下载：**
 
-- `BasicSettingsPanel.tsx`（约第 1192-1215 行）的图片上传流程：
-  ```
-  FileReader.readAsDataURL(file) → Image.onload → Canvas.drawImage → canvas.toDataURL("image/jpeg", 0.75)
-  ```
-- **JFIF 格式问题**：`.jfif` 是 JPEG 的变体，部分浏览器的 `<img>` 标签可以显示，但 `Image()` 构造函数加载后 `drawImage` 到 Canvas 可能出现解码异常（尤其是包含 EXIF 数据或非标准 JFIF 头的文件）。若 `Image.onload` 不触发而 `onerror` 未设置处理，则**整个操作静默失败**。
-- **WebP 格式问题**：较旧浏览器（如 Safari < 16）不支持 WebP 的 Canvas 绘制。即使支持，`toDataURL("image/jpeg")` 转码时若源图尺寸过大，生成的 base64 字符串可能非常长。
-- **localStorage 配额溢出**：一张 2MB 的图片经 base64 编码后约 2.67MB，加上原有 AppSettings 数据，很容易触发 `QuotaExceededError`。但当前代码**未捕获这个写入错误**。
-- **无格式白名单**：`<input type="file" accept="image/*">` 允许所有图片格式，但后续处理链只对 JPEG/PNG 经过充分测试。
+1. 当前时间 `09:46`，已过了 `08:00~08:45` 和 `09:00~09:45` 两个课时
+2. `useEffect` 每秒触发（依赖 `currentTime`）
+3. `for` 循环遍历所有课时 — 对每个已结束的课时都进入 `nowMin >= endMin` 分支
+4. `autoDownloadedPeriodIdRef` 是一个 **单值 ref**，只能记住"最后一个已下载的课时 ID"
+5. 第一次触发：下载课时 1 的报告，`ref = "period-1"`
+6. 循环继续：检查课时 2，`ref !== "period-2"`，**再次下载**，`ref = "period-2"`
+7. 下一秒再次触发：检查课时 1，`ref !== "period-1"`，**又下载了课时 1**！
+8. 如此循环往复，课时 1 和课时 2 交替被下载，**永不停止**
 
-### 问题 3：错误反馈缺失
+**场景 B — 结束前 1 分钟窗口的"重置陷阱"：**
 
-> [!WARNING]
-> 当前项目在设置保存操作上完全没有用户可见的错误反馈机制。
+1. `21:29` 进入结束前 1 分钟窗口，代码主动将 `autoDownloadedPeriodIdRef.current = null`
+2. `21:30` 课时结束，进入 `nowMin >= endMin` 分支
+3. `ref` 已被重置为 `null`，所以再次触发下载
+4. 下载完成后 `ref = p.id`
+5. 但 `useEffect` 依赖 `reportOpen`，如果报告弹窗状态变化，`useEffect` 重新执行
+6. 如果此时有任何状态更新导致重渲染（如 `currentTime` 每秒更新），**都可能触发额外下载**
 
-**现有错误反馈方式（仅限其他场景）：**
+**场景 C — `reportOpen` 依赖导致的意外重触发：**
 
-| 组件/模块 | 反馈方式 | 覆盖场景 |
-|-----------|---------|---------|
-| `BasicSettingsPanel.tsx` | `alert()` | 字体导入失败、系统字体读取失败 |
-| `StudySettingsPanel.tsx` | `openMessagePopup()` | 噪音校准失败 |
-| `errorCenter.ts` | 错误中心（HUD 显示） | 运行时错误聚合 |
-| `MessagePopup` | 弹窗组件 | 通用消息展示 |
+`useEffect` 同时依赖 `[currentTime, reportOpen]`。当报告弹窗打开/关闭时：
+1. `reportOpen` 从 `true` → `false`，触发 `useEffect` 重新执行
+2. 此时如果课时已结束，`for` 循环再次遍历已结束课时
+3. 如果 `autoDownloadedPeriodIdRef` 被之前的"重置逻辑"清除了，**又会触发下载**
 
-**缺失场景：**
-- `updateAppSettings()` / `updateStudySettings()` 等写入失败
-- 背景图片上传处理失败（解码/压缩/存储）
-- 字体/颜色等样式设置保存失败
-- localStorage 配额溢出
+### 严重性
+
+> [!CAUTION]
+> 在有多个课时的课表配置下，每秒触发一次下载，浏览器允许多文件下载时会以 **每秒 N 个文件**（N = 已结束课时数量）的速率疯狂下载，直到用户手动关闭页面或禁用下载权限。
 
 ---
 
 ## 修复方案
 
-### 阶段一：`appSettings` 写入层增加错误传播
-
-> 让所有设置写入操作能够向上报告成功/失败状态。
-
-#### [MODIFY] [appSettings.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/appSettings.ts)
-
-**变更 1：`updateAppSettings` 增加返回值**
-
-```diff
--export function updateAppSettings(
--  partial: DeepPartial<AppSettings> | ((current: AppSettings) => DeepPartial<AppSettings>)
--): void {
-+export interface SettingsSaveResult {
-+  success: boolean;
-+  error?: string;
-+  quotaExceeded?: boolean;
-+}
-+
-+export function updateAppSettings(
-+  partial: DeepPartial<AppSettings> | ((current: AppSettings) => DeepPartial<AppSettings>)
-+): SettingsSaveResult {
-   try {
-     // ...existing merge logic...
-     localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(nextSettings));
-+    return { success: true };
-   } catch (error) {
-     logger.error("Failed to save AppSettings", error);
-+    const isQuota = error instanceof DOMException && error.name === "QuotaExceededError";
-+    return {
-+      success: false,
-+      error: isQuota ? "存储空间不足，请清理背景图片或其他大体积数据" : "设置保存失败",
-+      quotaExceeded: isQuota,
-+    };
-   }
- }
-```
-
-**变更 2：所有 helper 函数同步返回 `SettingsSaveResult`**
-
-```diff
--export function updateStudySettings(updates: DeepPartial<AppSettings["study"]>): void {
--  updateAppSettings({ study: updates });
--}
-+export function updateStudySettings(updates: DeepPartial<AppSettings["study"]>): SettingsSaveResult {
-+  return updateAppSettings({ study: updates });
-+}
-```
-
-同理修改 `updateGeneralSettings`、`updatePerformanceSettings`、`updateTimeSyncSettings`、`updateNoiseSettings`。
-
----
-
-### 阶段二：背景图片存储迁移到 IndexedDB
-
-> 将大体积的图片数据从 localStorage 迁移到 IndexedDB，从根本上解决配额问题。
-
-> [!NOTE]
-> **为什么选择 IndexedDB 而非其他方案？**
-> 由于 Vercel Hobby 无后端存储（无 Blob Storage / KV / Database），客户端存储是唯一选择。IndexedDB 的浏览器配额远大于 localStorage（通常为可用磁盘空间的 50% 或至少数百 MB），且原生支持 Blob 存储，无需 base64 编码膨胀。项目中 `studyFontStorage.ts` 已有成熟的 IndexedDB Blob 存储先例可复用。
-
-#### 存储容量对比
-
-| 存储方式 | 典型配额 | 适合场景 |
-|---------|---------|----------|
-| localStorage | 5-10 MB（整个源） | 轻量配置 JSON |
-| IndexedDB | 可用磁盘 50%（数百 MB ~ 数 GB） | 大体积 Blob/文件 |
-| Service Worker Cache | 可用磁盘 50%（与 IndexedDB 共享） | 静态资源缓存 |
-
-#### [MODIFY] [studyBackgroundStorage.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/studyBackgroundStorage.ts)
-
-新增以下能力：
-- `saveBackgroundImage(blob: Blob): Promise<void>` — 将图片 Blob 存入 IndexedDB
-- `loadBackgroundImage(): Promise<string | null>` — 从 IndexedDB 读取图片并返回 Object URL
-- `clearBackgroundImage(): Promise<void>` — 清除 IndexedDB 中的背景图片
-- `estimateStorageUsage(): Promise<{ used: number; quota: number } | null>` — 使用 `navigator.storage.estimate()` 估算当前存储用量（可选，用于在设置面板中展示存储状态）
-
-#### [MODIFY] [db.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/db.ts)
-
-- 在 IndexedDB schema 中新增 `backgrounds` object store（如尚不存在）
-- 使用类似 `studyFontStorage.ts` 的 Blob 存储模式
-
-#### [MODIFY] [appSettings.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/appSettings.ts)
-
-- `study.background.imageDataUrl` 字段**保留但不再存储实际图片数据**
-- 改为存储一个标志值（如 `"indexeddb"`），表示图片数据在 IndexedDB 中
-- 或新增 `imageStorageType: "dataUrl" | "indexeddb"` 字段实现向后兼容
-
-#### [MODIFY] [storageInitializer.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/storageInitializer.ts)
-
-新增迁移逻辑：
-1. 检查 AppSettings 中 `study.background.imageDataUrl` 是否包含实际 base64 数据
-2. 若是，将其转换为 Blob 并存入 IndexedDB
-3. 将 `imageDataUrl` 替换为标志值
-4. 迁移成功后更新 AppSettings
-
-> [!WARNING]
-> **迁移失败降级策略**：由于无后端备份，迁移过程中如果 IndexedDB 写入失败，必须**保留原 localStorage 数据不做删除**，并通过 Toast 通知用户「背景图片存储优化失败，图片仍可使用但可能影响其他设置的保存」。下次启动时重试迁移。
-
----
-
-### 阶段三：背景图片上传流程加固
-
-> 增加格式验证、大小限制、兼容性处理和错误反馈。
-
-#### [MODIFY] [BasicSettingsPanel.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/sections/BasicSettingsPanel.tsx)
-
-**变更 1：图片格式白名单**
-
-```typescript
-const ALLOWED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/bmp",
-  "image/svg+xml",
-];
-
-// .jfif 文件的 MIME type 通常为 image/jpeg，需要额外检查扩展名
-const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".jfif", ".png", ".webp", ".gif", ".bmp", ".svg"];
-```
-
-**变更 2：文件验证**
-
-```typescript
-// 原始文件限制 5MB（Vercel Hobby 无服务端压缩，全部客户端处理，需控制内存占用）
-const MAX_FILE_SIZE_MB = 5;
-
-function validateImageFile(file: File): { valid: boolean; error?: string } {
-  const ext = "." + file.name.split(".").pop()?.toLowerCase();
-  if (!ALLOWED_EXTENSIONS.includes(ext) && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return { valid: false, error: `不支持的图片格式: ${ext}` };
-  }
-  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-    return { valid: false, error: `图片文件过大（最大 ${MAX_FILE_SIZE_MB}MB），请先压缩后再上传` };
-  }
-  return { valid: true };
-}
-```
-
-**变更 3：Canvas 转码增加 fallback**
-
-```typescript
-// 尝试 JPEG 压缩，失败时 fallback 到 PNG
-let compressedDataUrl: string;
-try {
-  compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75);
-  if (!compressedDataUrl || compressedDataUrl === "data:,") {
-    // 某些浏览器对特殊格式返回空结果
-    compressedDataUrl = canvas.toDataURL("image/png");
-  }
-} catch (canvasError) {
-  // Canvas 安全限制或格式不支持
-  throw new Error("图片格式转换失败，请尝试使用 JPG 或 PNG 格式");
-}
-```
-
-**变更 4：`Image.onerror` 处理**
-
-```typescript
-const img = new Image();
-img.onerror = () => {
-  // 向用户显示错误
-  showError("图片加载失败，请确认文件未损坏且格式受支持");
-};
-img.onload = () => { /* existing canvas logic */ };
-img.src = dataUrl;
-```
-
-**变更 5：改为存入 IndexedDB**
-
-将压缩后的图片数据通过 `studyBackgroundStorage.saveBackgroundImage()` 存入 IndexedDB，而非直接写入 AppSettings。
-
----
-
-### 阶段四：统一的设置操作反馈机制
-
-> 建立统一的 Toast/通知组件，为所有设置操作提供即时反馈。
-
-#### [NEW] [SettingsToast.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/SettingsToast.tsx)
-
-创建轻量级 Toast 组件：
-- 支持 `success` / `error` / `warning` 三种类型
-- 自动消失（成功 2s，错误 5s）
-- 可手动关闭
-- 使用 CSS Module 样式，与项目风格统一
-- 采用 Portal 渲染，避免被父级 overflow 裁剪
-
-#### [NEW] [SettingsToast.module.css](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/SettingsToast.module.css)
-
-Toast 样式文件。
-
-#### [NEW] [useSettingsToast.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/hooks/useSettingsToast.ts)
-
-自定义 Hook 提供 Toast 调用接口：
-
-```typescript
-interface ToastOptions {
-  type: "success" | "error" | "warning";
-  message: string;
-  duration?: number; // ms, 默认 success:2000, error:5000
-}
-
-export function useSettingsToast() {
-  const showToast = useCallback((options: ToastOptions) => {
-    // 使用自定义事件分发通知
-    window.dispatchEvent(new CustomEvent("settings-toast", { detail: options }));
-  }, []);
-
-  const showSuccess = useCallback((message: string) => {
-    showToast({ type: "success", message });
-  }, [showToast]);
-
-  const showError = useCallback((message: string) => {
-    showToast({ type: "error", message, duration: 5000 });
-  }, [showToast]);
-
-  return { showToast, showSuccess, showError };
-}
-```
-
-#### [MODIFY] [BasicSettingsPanel.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/sections/BasicSettingsPanel.tsx)
-
-在保存按钮的 `onClick` 中：
-
-```typescript
-const handleSave = () => {
-  const result = updateStudySettings({
-    style: { digitColor, numericFontFamily, textFontFamily, /* ... */ },
-    background: { type: bgType, color: bgColor, /* ... */ },
-  });
-
-  if (result.success) {
-    showSuccess("设置已保存");
-  } else if (result.quotaExceeded) {
-    showError("存储空间不足！请减小背景图片体积或清除不需要的数据");
-  } else {
-    showError(result.error || "设置保存失败，请重试");
-  }
-};
-```
-
-#### [MODIFY] [StudySettingsPanel.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/sections/StudySettingsPanel.tsx)
-
-同理，在保存逻辑中检查 `SettingsSaveResult` 并展示 Toast。
-
-#### [MODIFY] [SettingsPanel.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/SettingsPanel.tsx)
-
-在设置面板容器中挂载 `SettingsToast` 组件，监听 `settings-toast` 事件。
-
----
-
-## 用户审查要项
-
-> [!CAUTION]
-> 阶段二（IndexedDB 迁移）是一个**不可逆的存储架构变更**。迁移后旧版本应用无法读取新格式的背景图片数据。由于 Vercel Hobby 无后端，不存在服务器端数据备份——一旦迁移出错且未正确降级，用户的背景图片将丢失。方案已内置失败降级策略（保留原数据 + 通知用户），请确认是否充分。
+### 修复 1：统一使用 PDF 渲染管线
 
 > [!IMPORTANT]
-> Toast 组件设计需要确认：
-> 1. 是否复用现有的 `MessagePopup` 组件，还是新建一个更轻量的 Toast？
-> 2. Toast 的显示位置偏好（顶部中央 / 右上角 / 底部中央）？
+> 需要将 `NoiseReportModal` 中的 PDF 渲染逻辑提取为独立的 headless 工具函数，使其可以在无 UI 上下文中被调用。
+
+#### [MODIFY] [noiseReportDownloader.ts](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/utils/noiseReportDownloader.ts)
+
+**改造方向**：
+- 删除 `generateReportHtml()` 函数和 HTML 模板
+- 新增 `downloadNoiseReportAsPdf(data: ReportData)` 函数
+- 复用 `html2canvas` + `jsPDF` 管线
+- 在 headless 模式下动态创建离屏 DOM 容器，渲染报告内容后截图生成 PDF
+- 下载完成后自动清理离屏 DOM
+
+**技术方案**：
+```typescript
+export async function downloadNoiseReportAsPdf(data: ReportData): Promise<void> {
+  // 1. 动态创建离屏容器
+  const container = document.createElement("div");
+  container.style.cssText = "position:fixed;left:-9999px;top:0;width:1000px;...";
+  container.innerHTML = buildPdfHtmlContent(data); // 复用 NoiseReportModal 的布局
+  document.body.appendChild(container);
+  
+  // 2. 等待渲染完成
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  // 3. html2canvas → jsPDF → save
+  const canvas = await html2canvas(container, { scale: 3, ... });
+  const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+  // ...
+  pdf.save(`噪音报告_${data.periodName}_${dateStr}.pdf`);
+  
+  // 4. 清理
+  document.body.removeChild(container);
+}
+```
+
+> [!WARNING]
+> `NoiseReportModal` 中的 PDF 离屏渲染层包含约 1500 行 JSX（含 SVG 图表），直接以 innerHTML 方式复用需要将 JSX 转为纯 HTML 字符串。更优方案是将报告数据+布局模板提取为共享模块，两处同时引用。
+
+#### 替代方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| **A. 提取 headless PDF 渲染函数** | 完全复用现有PDF布局；无需UI挂载 | 需要将JSX→HTML模板；SVG图表需手动字符串拼接 |
+| **B. 自动触发 NoiseReportModal 的导出** | 零代码重复 | 需要先渲染Modal(可隐藏)，用户体验差；依赖React组件生命周期 |
+| **C. 改造 HTML 模板为打印友好版 + window.print()** | 改动最小 | 仍非PDF；打印效果依赖浏览器；无法完全无UI |
+| **D. (推荐) 将 HTML 报告模板升级为 PDF 级别质量，并用 jsPDF 直接 API 绘制** | 不依赖DOM截图；更可靠 | 开发量最大；jsPDF 原生 API 对复杂布局支持弱 |
+
+**推荐方案 A**：提取 headless PDF 渲染函数。
 
 ---
 
-## 开放问题
+### 修复 2：根治重复下载问题
 
-1. **背景图片最大尺寸限制**：建议 5MB 原始文件（纯客户端处理，无服务端压缩能力），Canvas 压缩后目标 < 1MB。是否合适？
-2. **背景图片 Canvas 压缩质量**：当前为 `0.75`，考虑到纯客户端场景，建议降至 `0.6` 以减小 IndexedDB 存储压力。是否接受？
-3. **是否需要支持背景图片预览**：上传后立即在设置面板中预览，确认后再保存？
-4. **旧版 `alert()` 调用是否统一替换为 Toast**：`BasicSettingsPanel.tsx` 中字体导入失败仍使用 `alert()`，是否一并迁移？
-5. **是否在设置面板展示存储用量**：通过 `navigator.storage.estimate()` 显示已用/可用空间，帮助用户了解客户端存储状态？（因为无后端，用户需自行管理本地存储）
+#### [MODIFY] [Study.tsx](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/components/Study/Study.tsx#L107-L169)
+
+**核心改动**：
+
+1. **将 `autoDownloadedPeriodIdRef` 从单值改为 Set**，记录所有已下载的课时 ID：
+   ```typescript
+   const autoDownloadedPeriodsRef = useRef<Set<string>>(new Set());
+   ```
+
+2. **删除结束前 1 分钟窗口中的重置逻辑**（第 151-153 行），这是重复下载的最直接诱因：
+   ```diff
+   - if (autoDownloadedPeriodIdRef.current === p.id) {
+   -   autoDownloadedPeriodIdRef.current = null;
+   - }
+   ```
+
+3. **增加日期维度的防重键**，避免跨天后同一课时 ID 的报告无法再次下载（次日应允许新的下载）：
+   ```typescript
+   const todayKey = `${p.id}::${todayDateStr}`;
+   if (!autoDownloadedPeriodsRef.current.has(todayKey)) {
+     // download...
+     autoDownloadedPeriodsRef.current.add(todayKey);
+   }
+   ```
+
+4. **将 `reportOpen` 从 useEffect 依赖中移除**，防止弹窗状态变化导致下载逻辑被意外重触发：
+   ```diff
+   - }, [currentTime, reportOpen]);
+   + }, [currentTime]);
+   ```
+
+5. **增加额外安全措施** — 在 `downloadNoiseReport` 调用前增加节流保护：
+   ```typescript
+   const lastDownloadTimeRef = useRef<number>(0);
+   // 至少间隔 10 秒才允许下一次下载
+   if (Date.now() - lastDownloadTimeRef.current < 10_000) return;
+   ```
 
 ---
 
-## 涉及文件清单
-
-### 核心修改
+## 修改文件清单
 
 | 文件 | 变更类型 | 说明 |
-|------|---------|------|
-| [appSettings.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/appSettings.ts) | MODIFY | 增加 `SettingsSaveResult` 返回值，所有写入函数返回成功/失败 |
-| [studyBackgroundStorage.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/studyBackgroundStorage.ts) | MODIFY | 新增 IndexedDB 背景图片存取 API |
-| [db.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/db.ts) | MODIFY | 新增 `backgrounds` object store |
-| [storageInitializer.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/storageInitializer.ts) | MODIFY | 新增 base64→IndexedDB 迁移逻辑 |
-| [BasicSettingsPanel.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/sections/BasicSettingsPanel.tsx) | MODIFY | 图片格式验证 + 上传错误处理 + 保存反馈 |
-| [StudySettingsPanel.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/sections/StudySettingsPanel.tsx) | MODIFY | 保存反馈集成 |
-| [SettingsPanel.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/SettingsPanel.tsx) | MODIFY | 挂载 Toast 容器 |
-
-### 新增文件
-
-| 文件 | 说明 |
-|------|------|
-| [SettingsToast.tsx](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/SettingsToast.tsx) | Toast 通知组件 |
-| [SettingsToast.module.css](file:///d:/WebstormProjects/Immersive-clock-main/src/components/SettingsPanel/SettingsToast.module.css) | Toast 样式 |
-| [useSettingsToast.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/hooks/useSettingsToast.ts) | Toast Hook |
-
-### 测试文件
-
-| 文件 | 说明 |
-|------|------|
-| [appSettings.test.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/__tests__/appSettings.test.ts) | 补充 QuotaExceededError 测试用例 |
-| [studyBackgroundStorage.test.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/__tests__/studyBackgroundStorage.test.ts) | IndexedDB 背景图片存取测试 |
-| [storageInitializer.test.ts](file:///d:/WebstormProjects/Immersive-clock-main/src/utils/__tests__/storageInitializer.test.ts) | base64→IndexedDB 迁移测试 |
-| [settings-persistence.e2e.spec.ts](file:///d:/WebstormProjects/Immersive-clock-main/tests/e2e/settings-persistence.e2e.spec.ts) | 端到端：设置保存/刷新/恢复 |
+|------|----------|------|
+| [noiseReportDownloader.ts](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/utils/noiseReportDownloader.ts) | MODIFY | 将 HTML 下载替换为 PDF 渲染管线 |
+| [Study.tsx](file:///c:/Users/Changhong/Documents/Code/Immersive-clock-main/src/components/Study/Study.tsx) | MODIFY | 修复重复下载逻辑；适配新的异步 PDF 下载 API |
+| 可能新增：`src/utils/noiseReportRenderer.ts` | NEW | 抽取共享的 PDF 报告 HTML 模板渲染逻辑 |
 
 ---
 
 ## 验证计划
 
 ### 自动化测试
-
-**单元测试（Vitest）：**
-
-```bash
-# 测试 appSettings 写入失败场景
-npm test -- src/utils/__tests__/appSettings.test.ts
-
-# 测试 IndexedDB 背景图片存取
-npm test -- src/utils/__tests__/studyBackgroundStorage.test.ts
-
-# 测试存储迁移逻辑
-npm test -- src/utils/__tests__/storageInitializer.test.ts
-```
-
-需要覆盖的关键场景：
-- `updateAppSettings` 在 `QuotaExceededError` 时返回正确的 `SettingsSaveResult`
-- `updateStudySettings` 只更新 `study.style` 中传入的字段，不覆盖其他字段
-- 背景图片成功存入/读取 IndexedDB
-- base64 数据迁移后 AppSettings 中不再包含大体积数据
-- 迁移幂等性（多次执行不破坏数据）
-
-**端到端测试（Playwright）：**
-
-```bash
-npx playwright test tests/e2e/settings-persistence.e2e.spec.ts
-```
-
-需要覆盖的关键用户路径：
-1. 修改数字颜色 → 保存 → 刷新 → 验证颜色保持
-2. 修改数字字体 → 保存 → 刷新 → 验证字体保持
-3. 上传 `.webp` 背景图片 → 保存 → 刷新 → 验证背景保持
-4. 上传超大图片 → 验证弹出大小限制提示
-5. 上传不支持的格式 → 验证弹出格式错误提示
+- 为 `noiseReportDownloader.ts` 补充单元测试，验证 PDF 生成不会抛异常
+- 为 Study 组件的自动下载逻辑补充防重测试（模拟多课时、跨秒触发）
 
 ### 手动验证
+- 配置多个课时（至少 3 个），确认每个课时结束后只下载一次 PDF
+- 确认下载的文件格式为 `.pdf` 且内容完整（含图表、学校徽章）
+- 确认跨天后同一课时可以再次正常下载
+- 确认手动点击 NoiseReportModal 中的"导出为 PDF"按钮仍正常工作
 
-- [ ] 在 Chrome / Edge 中测试 `.jfif` 格式图片上传
-- [ ] 在 Chrome / Edge 中测试 `.webp` 格式图片上传
-- [ ] 填满 localStorage 后测试设置保存是否弹出错误提示
-- [ ] 验证 Toast 组件在设置面板内的显示效果
-- [ ] 验证迁移逻辑：清空 IndexedDB，手动在 localStorage 中设置一个包含 base64 imageDataUrl 的 AppSettings，刷新页面后验证图片正常显示且 localStorage 体积缩小
+## Open Questions
 
-### Vercel 部署验证
+> [!IMPORTANT]
+> **关于 PDF 报告内容**：自动下载的 PDF 报告是否应该与手动导出的完全一致（包含 SVG 图表、学校徽章等），还是可以使用一个简化版本？完全一致的方案开发量更大但用户体验更好。
 
-- [ ] 本地 `npm run build` 确认构建成功，无 TypeScript 错误
-- [ ] 推送到 Vercel 后确认 Preview 部署正常
-- [ ] 在 Vercel Preview URL 上测试：设置保存 → 刷新 → 验证持久化（排除 PWA Service Worker 缓存干扰）
-- [ ] 确认 PWA 离线模式下设置仍可正常读写（Service Worker 不会拦截 localStorage/IndexedDB 操作，但需确保不会出现缓存旧页面 JS 与新存储格式不兼容的问题）
-- [ ] 硬刷新（Ctrl+Shift+R）后验证迁移逻辑在新代码首次加载时正确执行
-
----
-
-## 实施顺序与依赖关系
-
-```mermaid
-graph TD
-    A["阶段一：appSettings 错误传播"] --> C["阶段三：图片上传加固"]
-    A --> D["阶段四：Toast 反馈机制"]
-    B["阶段二：IndexedDB 迁移"] --> C
-    C --> E["端到端测试"]
-    D --> E
-```
-
-**建议顺序：**
-1. **阶段一**（基础设施）→ 2. **阶段四**（Toast 组件）→ 3. **阶段二**（IndexedDB 迁移）→ 4. **阶段三**（图片上传加固）→ 5. 测试验证
-
-> [!TIP]
-> 阶段一和阶段四可以并行开发，因为它们没有代码依赖关系。阶段二和阶段三存在依赖（图片需要存入 IndexedDB），必须按顺序进行。
+> [!IMPORTANT]
+> **关于"结束前1分钟重置"逻辑的原始意图**：删除第 151-153 行的重置逻辑后，如果用户在课时进行中刷新了页面（ref 丢失），课时结束后仍能正常触发一次下载。但需要确认：当初加入此重置逻辑是否有其他业务目的？
